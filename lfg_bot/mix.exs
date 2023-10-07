@@ -53,6 +53,7 @@ defmodule LfgBot.MixProject do
       {:ash, "~> 2.15"},
       {:ash_postgres, "~> 1.3"},
       {:ash_phoenix, "~> 1.2"},
+      {:ash_state_machine, "~> 0.2.2"}
     ]
   end
 

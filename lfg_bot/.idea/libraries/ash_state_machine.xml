@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="ash_state_machine" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_state_machine/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_state_machine/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_state_machine/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_state_machine/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/ash_state_machine/lib" />
+      <root url="file://$PROJECT_DIR$/deps/ash_state_machine/lib" />
+    </SOURCES>
+  </library>
+</component>

@@ -56,6 +56,7 @@
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash_phoenix" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash_postgres" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash_state_machine" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/comparable" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/elixir_make" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ets" />
@@ -157,5 +158,6 @@
     <orderEntry type="library" name="elixir_make" level="project" />
     <orderEntry type="library" name="typable" level="project" />
     <orderEntry type="library" name="boilex" level="project" />
+    <orderEntry type="library" name="ash_state_machine" level="project" />
   </component>
 </module>
