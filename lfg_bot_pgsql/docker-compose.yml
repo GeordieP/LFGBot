@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  lfgbot_pgsql_dev:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./volumes/data:/var/lib/postgresql/data
