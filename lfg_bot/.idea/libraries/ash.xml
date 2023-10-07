@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="ash" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/ash/lib" />
+      <root url="file://$PROJECT_DIR$/deps/ash/lib" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="ets" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/ets/lib" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="picosat_elixir" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/picosat_elixir/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/picosat_elixir/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/picosat_elixir/lib" />
+      <root url="file://$PROJECT_DIR$/deps/picosat_elixir/src" />
+      <root url="file://$PROJECT_DIR$/deps/picosat_elixir/priv" />
+      <root url="file://$PROJECT_DIR$/deps/picosat_elixir/c_src" />
+    </SOURCES>
+  </library>
+</component>

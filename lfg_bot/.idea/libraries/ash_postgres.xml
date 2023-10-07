@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="ash_postgres" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_postgres/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ash_postgres/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/ash_postgres/lib" />
+      <root url="file://$PROJECT_DIR$/deps/ash_postgres/lib" />
+    </SOURCES>
+  </library>
+</component>

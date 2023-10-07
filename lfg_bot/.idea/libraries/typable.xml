@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="typable" type="mix">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/typable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/typable/ebin" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/typable/lib" />
+      <root url="file://$PROJECT_DIR$/deps/typable/priv" />
+    </SOURCES>
+  </library>
+</component>

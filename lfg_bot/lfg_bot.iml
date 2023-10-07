@@ -53,6 +53,17 @@
       <excludeFolder url="file://$MODULE_DIR$/deps" />
       <excludeFolder url="file://$MODULE_DIR$/doc" />
       <excludeFolder url="file://$MODULE_DIR$/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash_phoenix" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ash_postgres" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/comparable" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/elixir_make" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/ets" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/picosat_elixir" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/sourceror" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/spark" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/stream_data" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/typable" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="phoenix" level="project" />
@@ -127,5 +138,24 @@
     <orderEntry type="library" name="mox" level="project" />
     <orderEntry type="library" name="ssl_verify_fun" level="project" />
     <orderEntry type="library" name="hpack" level="project" />
+    <orderEntry type="library" name="ash" level="project" />
+    <orderEntry type="library" name="ash_postgres" level="project" />
+    <orderEntry type="library" name="ash_phoenix" level="project" />
+    <orderEntry type="library" name="spark" level="project" />
+    <orderEntry type="library" name="ets" level="project" />
+    <orderEntry type="library" name="picosat_elixir" level="project" />
+    <orderEntry type="library" name="comparable" level="project" />
+    <orderEntry type="library" name="ex_check" level="project" />
+    <orderEntry type="library" name="sobelow" level="project" />
+    <orderEntry type="library" name="git_ops" level="project" />
+    <orderEntry type="library" name="mix_test_watch" level="project" />
+    <orderEntry type="library" name="doctor" level="project" />
+    <orderEntry type="library" name="sourceror" level="project" />
+    <orderEntry type="library" name="parse_trans" level="project" />
+    <orderEntry type="library" name="elixir_sense" level="project" />
+    <orderEntry type="library" name="ex_unit_notifier" level="project" />
+    <orderEntry type="library" name="elixir_make" level="project" />
+    <orderEntry type="library" name="typable" level="project" />
+    <orderEntry type="library" name="boilex" level="project" />
   </component>
 </module>
