@@ -3,9 +3,21 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
       <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/comparable/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/comparable/ebin" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/comparable/lib" />
+      <root url="file://$PROJECT_DIR$/deps/comparable/priv" />
+      <root url="file://$PROJECT_DIR$/deps/comparable/lib" />
+      <root url="file://$PROJECT_DIR$/deps/comparable/priv" />
       <root url="file://$PROJECT_DIR$/deps/comparable/lib" />
       <root url="file://$PROJECT_DIR$/deps/comparable/priv" />
     </SOURCES>

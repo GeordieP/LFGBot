@@ -3,9 +3,19 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
       <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/dev/lib/ets/ebin" />
+      <root url="file://$PROJECT_DIR$/_build/test/lib/ets/ebin" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
+      <root url="file://$PROJECT_DIR$/deps/ets/lib" />
+      <root url="file://$PROJECT_DIR$/deps/ets/lib" />
       <root url="file://$PROJECT_DIR$/deps/ets/lib" />
     </SOURCES>
   </library>
