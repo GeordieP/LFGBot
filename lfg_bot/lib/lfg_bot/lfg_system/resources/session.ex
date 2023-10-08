@@ -69,6 +69,15 @@ defmodule LfgBot.LfgSystem.Session do
     end
 
     update :player_leave do
+      argument :id, :string do
+        allow_nil?(false)
+      end
+
+      change(fn changeset, _ ->
+        id = Ash.Changeset.get_argument(changeset, :id)
+        Utils.remove_player(changeset, id)
+      end)
+
       # TODO: remove player from reserve if they're in there
       # TODO: remove player from teams if they're in there
     end
@@ -84,6 +93,25 @@ defmodule LfgBot.LfgSystem.Session do
 end
 
 defmodule LfgBot.LfgSystem.Session.Utils do
+  def remove_player(changeset, player_id) do
+    [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
+
+    %{"players" => players_one} = team_one
+    %{"players" => players_two} = team_two
+
+    players_one = Enum.reject(players_one, &(&1.id == player_id))
+    players_two = Enum.reject(players_two, &(&1.id == player_id))
+    team_one = Map.put(team_one, "players", players_one)
+    team_two = Map.put(team_two, "players", players_two)
+
+    player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
+    player_reserve = Enum.reject(player_reserve, &(&1.id == player_id))
+
+    changeset
+    |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
+    |> Ash.Changeset.change_attribute(:player_reserve, player_reserve)
+  end
+
   def add_player(changeset, new_player) do
     state = Ash.Changeset.get_attribute(changeset, :state)
     player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
@@ -102,12 +130,10 @@ defmodule LfgBot.LfgSystem.Session.Utils do
 
     cond do
       player_from_reserve != nil ->
-        changeset = Ash.Changeset.add_error(changeset, "player is already in the reserve list")
-        changeset
+        Ash.Changeset.add_error(changeset, "player is already in the reserve list")
 
       player_from_team != nil ->
-        changeset = Ash.Changeset.add_error(changeset, "player is already in a team")
-        changeset
+        Ash.Changeset.add_error(changeset, "player is already in a team")
 
       true ->
         case state do
@@ -130,11 +156,15 @@ defmodule LfgBot.LfgSystem.Session.Utils do
 
             if length(players_one) > length(players_two) do
               # second list is shorter; add to that
-              new_team_two = %{"players" => Enum.reverse([new_player | players_two])}
+              new_team_two =
+                Map.put(team_two, "players", Enum.reverse([new_player | players_two]))
+
               Ash.Changeset.change_attribute(changeset, :teams, [team_one, new_team_two])
             else
               # add to the first list
-              new_team_one = %{"players" => Enum.reverse([new_player | players_one])}
+              new_team_one =
+                Map.put(team_one, "players", Enum.reverse([new_player | players_one]))
+
               Ash.Changeset.change_attribute(changeset, :teams, [new_team_one, team_two])
             end
 

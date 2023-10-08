@@ -78,6 +78,8 @@ defmodule LfgBot.SessionTest do
 
     assert %Session{} = session
 
+    # ----------------
+
     {:ok, session} =
       Ash.Changeset.new(session)
       |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
@@ -93,6 +95,8 @@ defmodule LfgBot.SessionTest do
              player_reserve: []
            } = session
 
+    # ----------------
+
     {:ok, session} =
       Ash.Changeset.new(session)
       |> Ash.Changeset.for_update(:start_game)
@@ -103,6 +107,8 @@ defmodule LfgBot.SessionTest do
              player_reserve: [],
              state: :playing
            } = session
+
+    # ----------------
 
     {:ok, session} =
       Ash.Changeset.new(session)
@@ -119,9 +125,120 @@ defmodule LfgBot.SessionTest do
   end
 
   test "removes players that are in the reserve" do
+    [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
+
+    {:ok, session} =
+      Ash.Changeset.new(Session)
+      |> Ash.Changeset.for_create(:create)
+      |> LfgSystem.create()
+
+    assert %Session{} = session
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
+             player_reserve: []
+           } = session
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:start_game)
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
+             player_reserve: [],
+             state: :playing
+           } = session
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
+             player_reserve: [check_player_three],
+             state: :playing
+           } = session
+
+    assert check_player_three.id == user_three.id
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_leave, user_three)
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
+             player_reserve: [],
+             state: :playing
+           } = session
   end
 
   test "removes players that are on a team" do
+    [user_one, user_two] = Enum.take(mock_users(), 2)
+
+    {:ok, session} =
+      Ash.Changeset.new(Session)
+      |> Ash.Changeset.for_create(:create)
+      |> LfgSystem.create()
+
+    assert %Session{} = session
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
+      |> LfgSystem.update()
+
+    # start the game. currently, removing players while a game is in progress is allowed, but this could change (update this test if it doe change).
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:start_game)
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
+             player_reserve: [],
+             state: :playing
+           } = session
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_leave, user_one)
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => []}, %{"players" => [check_player_two]}],
+             player_reserve: [],
+             state: :playing
+           } = session
   end
 
   def mock_player(username) do
