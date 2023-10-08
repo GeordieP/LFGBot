@@ -82,17 +82,37 @@ defmodule LfgBot.LfgSystem.Session do
       # TODO: remove player from teams if they're in there
     end
 
-    update :shuffle_players do
-      # TODO: NOOP unless state == :waiting
-      # TODO: combine: [existing players on team A, existing players on team B, players in reserve] into one list
-      # TODO: shuffle the composite list
-      # TODO: split the composite list into new team A, new team B
-      # TODO: save the new teams (and now-empty reserve list) in changeset
+    update :shuffle_teams do
+      change(fn changeset, _ ->
+        Utils.shuffle_teams(changeset)
+      end)
     end
   end
 end
 
 defmodule LfgBot.LfgSystem.Session.Utils do
+  def shuffle_teams(changeset) do
+    player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
+    [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
+
+    %{"players" => players_one} = team_one
+    %{"players" => players_two} = team_two
+
+    all_players = Enum.concat([player_reserve, players_one, players_two])
+
+    {players_two, players_one} =
+      all_players
+      |> Enum.shuffle()
+      |> Enum.split(Kernel.trunc(length(all_players) / 2))
+
+    team_one = Map.put(team_one, "players", players_one)
+    team_two = Map.put(team_two, "players", players_two)
+
+    changeset
+    |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
+    |> Ash.Changeset.change_attribute(:player_reserve, [])
+  end
+
   def remove_player(changeset, player_id) do
     [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
 

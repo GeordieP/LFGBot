@@ -241,6 +241,59 @@ defmodule LfgBot.SessionTest do
            } = session
   end
 
+  test "shuffles teams and drains player reserve" do
+    [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
+
+    {:ok, session} =
+      Ash.Changeset.new(Session)
+      |> Ash.Changeset.for_create(:create)
+      |> LfgSystem.create()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:start_game)
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => players_one}, %{"players" => players_two}],
+             player_reserve: players_three,
+             state: :playing
+           } = session
+
+    all_players_cache = Enum.concat([players_one, players_two, players_three])
+    assert length(all_players_cache) == 3
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:shuffle_teams)
+      |> LfgSystem.update()
+
+    assert %Session{
+             teams: [%{"players" => players_one}, %{"players" => players_two}],
+             player_reserve: [],
+             state: :playing
+           } = session
+
+    shuffled_all_players = Enum.concat([players_one, players_two])
+    assert length(all_players_cache) == 3
+    assert shuffled_all_players != all_players_cache
+  end
+
   def mock_player(username) do
     %{
       id: gen_id(),
