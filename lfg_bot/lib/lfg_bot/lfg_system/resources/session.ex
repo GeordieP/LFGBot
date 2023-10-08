@@ -77,9 +77,6 @@ defmodule LfgBot.LfgSystem.Session do
         id = Ash.Changeset.get_argument(changeset, :id)
         Utils.remove_player(changeset, id)
       end)
-
-      # TODO: remove player from reserve if they're in there
-      # TODO: remove player from teams if they're in there
     end
 
     update :shuffle_teams do

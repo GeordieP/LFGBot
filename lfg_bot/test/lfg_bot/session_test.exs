@@ -4,28 +4,7 @@ defmodule LfgBot.SessionTest do
   alias LfgBot.LfgSystem
   alias LfgBot.LfgSystem.Session
 
-  def mock_users do
-    [
-      mock_player("user_one"),
-      mock_player("user_two"),
-      mock_player("user_three"),
-      mock_player("user_four"),
-      mock_player("user_five"),
-      mock_player("user_six"),
-      mock_player("user_seven"),
-      mock_player("user_eight"),
-      mock_player("user_nine"),
-      mock_player("user_ten")
-    ]
-  end
-
-  describe "todo rename this test" do
-    # TODO: create a session
-    # TODO: add some players
-    # TODO: shuffle players, check output is different every time
-    # TODO: remove some players, check they're gone
-    # TODO: shuffle players, check removed players are gone
-
+  describe "session behavior" do
     test "distributes new players evenly into two teams when a game has not started (default waiting state)" do
       [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
 
@@ -291,7 +270,70 @@ defmodule LfgBot.SessionTest do
 
     shuffled_all_players = Enum.concat([players_one, players_two])
     assert length(all_players_cache) == 3
-    assert shuffled_all_players != all_players_cache
+    # TODO:
+    # TODO:
+    # TODO: this test can fail randomly since the new result can end up the same as the original
+    # TODO: how can we properly test that this is attempting to shuffle?
+    # TODO:
+    # TODO:
+    # assert shuffled_all_players != all_players_cache
+  end
+
+  test "prevents one user from joining more than once" do
+    [user_one, user_two] = Enum.take(mock_users(), 2)
+
+    {:ok, session} =
+      Ash.Changeset.new(Session)
+      |> Ash.Changeset.for_create(:create)
+      |> LfgSystem.create()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
+      |> LfgSystem.update()
+
+    {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.InvalidChanges{message: message}]}} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
+      |> LfgSystem.update()
+
+    assert message =~ "already in"
+    assert message =~ "team"
+
+    # ----------------
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:start_game)
+      |> LfgSystem.update()
+
+    {:ok, session} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
+      |> LfgSystem.update()
+
+    {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.InvalidChanges{message: message}]}} =
+      Ash.Changeset.new(session)
+      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
+      |> LfgSystem.update()
+
+    assert message =~ "already in"
+    assert message =~ "reserve"
+  end
+
+  def mock_users do
+    [
+      mock_player("user_one"),
+      mock_player("user_two"),
+      mock_player("user_three"),
+      mock_player("user_four"),
+      mock_player("user_five"),
+      mock_player("user_six"),
+      mock_player("user_seven"),
+      mock_player("user_eight"),
+      mock_player("user_nine"),
+      mock_player("user_ten")
+    ]
   end
 
   def mock_player(username) do
@@ -301,11 +343,6 @@ defmodule LfgBot.SessionTest do
       bot: false
     }
   end
-
-  #  def gen_name do
-  #    timestamp = DateTime.now!() |> DateTime.to_unix()
-  #    "user_#{timestamp}"
-  #  end
 
   def gen_id do
     Ecto.UUID.generate()
