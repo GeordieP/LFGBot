@@ -62,32 +62,9 @@ defmodule LfgBot.LfgSystem.Session do
         allow_nil?(false)
       end
 
-      # TODO: player argument
-      # TODO: add player to reserve if they aren't in there already (check colliding ids)
       change(fn changeset, _ ->
         new_player = Ash.Changeset.get_argument(changeset, :new_player)
         Utils.add_player(changeset, new_player)
-        # {:ok, changeset} =
-        #   case  do
-        #     {:ok, changeset} ->
-        #       changeset
-
-        #     {:error, error} ->
-        #       {:error, error}
-        #   end
-
-        #        Ash.Changeset.fetch_argument(changeset, :destination_user_id)
-
-        #        with {:ok, destination_user_id} <-
-        #               Ash.Changeset.fetch_argument(changeset, :destination_user_id),
-        #             {:ok, _} <-
-        #               Twitter.Accounts.FriendLink.create(changeset.data.id, destination_user_id, %{
-        #                 status: :approved
-        #               }),
-        #             {:ok, _} <-
-        #               Twitter.Accounts.FriendLink.create(destination_user_id, changeset.data.id) do
-        #          {:ok, changeset.data}
-        #        end
       end)
     end
 
