@@ -90,104 +90,109 @@ end
 defmodule LfgBot.LfgSystem.Session.Utils do
   def add_player(changeset, new_player) do
     state = Ash.Changeset.get_attribute(changeset, :state)
-    player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
-    teams = Ash.Changeset.get_attribute(changeset, :teams)
 
-    player_from_reserve = Enum.find(player_reserve, nil, &(&1.id == new_player.id))
+    if state in [:ended, :error] do
+      changeset
+    else
+      player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
+      teams = Ash.Changeset.get_attribute(changeset, :teams)
 
-    player_from_team =
-      Enum.find_value(teams, nil, fn
-        [] ->
-          nil
+      player_from_reserve = Enum.find(player_reserve, nil, &(&1.id == new_player.id))
 
-        %{"players" => players} ->
-          Enum.find(players, nil, &(&1.id == new_player.id))
-      end)
+      player_from_team =
+        Enum.find_value(teams, nil, fn
+          [] ->
+            nil
 
-    cond do
-      player_from_reserve != nil ->
-        Ash.Changeset.add_error(changeset, "player is already in the reserve list")
+          %{"players" => players} ->
+            Enum.find(players, nil, &(&1.id == new_player.id))
+        end)
 
-      player_from_team != nil ->
-        Ash.Changeset.add_error(changeset, "player is already in a team")
+      cond do
+        player_from_reserve != nil ->
+          Ash.Changeset.add_error(changeset, "player is already in the reserve list")
 
-      true ->
-        case state do
-          :playing ->
-            # a game is in progress, add the new player to the reserve list
-            new_player_reserve = [new_player | player_reserve]
+        player_from_team != nil ->
+          Ash.Changeset.add_error(changeset, "player is already in a team")
 
-            changeset =
-              Ash.Changeset.change_attribute(changeset, :player_reserve, new_player_reserve)
+        state == :playing ->
+          # a game is in progress, add the new player to the reserve list
+          new_player_reserve = [new_player | player_reserve]
+          Ash.Changeset.change_attribute(changeset, :player_reserve, new_player_reserve)
 
-            changeset
+        state == :waiting ->
+          # add new player to whichever team has fewer players, or the first team by default
+          # NOTE: assume two teams for now
+          [team_one, team_two] = teams
 
-          :waiting ->
-            # add new player to whichever team has fewer players, or the first team by default
-            # NOTE: assume two teams for now
-            [team_one, team_two] = teams
+          %{"players" => players_one} = team_one
+          %{"players" => players_two} = team_two
 
-            %{"players" => players_one} = team_one
-            %{"players" => players_two} = team_two
+          if length(players_one) > length(players_two) do
+            new_team_two = Map.put(team_two, "players", Enum.reverse([new_player | players_two]))
+            Ash.Changeset.change_attribute(changeset, :teams, [team_one, new_team_two])
+          else
+            new_team_one = Map.put(team_one, "players", Enum.reverse([new_player | players_one]))
+            Ash.Changeset.change_attribute(changeset, :teams, [new_team_one, team_two])
+          end
 
-            if length(players_one) > length(players_two) do
-              # second list is shorter; add to that
-              new_team_two =
-                Map.put(team_two, "players", Enum.reverse([new_player | players_two]))
-
-              Ash.Changeset.change_attribute(changeset, :teams, [team_one, new_team_two])
-            else
-              # add to the first list
-              new_team_one =
-                Map.put(team_one, "players", Enum.reverse([new_player | players_one]))
-
-              Ash.Changeset.change_attribute(changeset, :teams, [new_team_one, team_two])
-            end
-
-          _ ->
-            changeset
-        end
+        true ->
+          changeset
+      end
     end
   end
 
   def remove_player(changeset, player_id) do
-    [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
+    state = Ash.Changeset.get_attribute(changeset, :state)
 
-    %{"players" => players_one} = team_one
-    %{"players" => players_two} = team_two
+    if state in [:ended, :error] do
+      changeset
+    else
+      [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
 
-    players_one = Enum.reject(players_one, &(&1.id == player_id))
-    players_two = Enum.reject(players_two, &(&1.id == player_id))
-    team_one = Map.put(team_one, "players", players_one)
-    team_two = Map.put(team_two, "players", players_two)
+      %{"players" => players_one} = team_one
+      %{"players" => players_two} = team_two
 
-    player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
-    player_reserve = Enum.reject(player_reserve, &(&1.id == player_id))
+      players_one = Enum.reject(players_one, &(&1.id == player_id))
+      players_two = Enum.reject(players_two, &(&1.id == player_id))
 
-    changeset
-    |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
-    |> Ash.Changeset.change_attribute(:player_reserve, player_reserve)
+      team_one = Map.put(team_one, "players", players_one)
+      team_two = Map.put(team_two, "players", players_two)
+
+      player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
+      player_reserve = Enum.reject(player_reserve, &(&1.id == player_id))
+
+      changeset
+      |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
+      |> Ash.Changeset.change_attribute(:player_reserve, player_reserve)
+    end
   end
 
   def shuffle_teams(changeset) do
-    player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
-    [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
+    state = Ash.Changeset.get_attribute(changeset, :state)
 
-    %{"players" => players_one} = team_one
-    %{"players" => players_two} = team_two
+    if state in [:ended, :error] do
+      changeset
+    else
+      player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
+      [team_one, team_two] = Ash.Changeset.get_attribute(changeset, :teams)
 
-    all_players = Enum.concat([player_reserve, players_one, players_two])
+      %{"players" => players_one} = team_one
+      %{"players" => players_two} = team_two
 
-    {players_two, players_one} =
-      all_players
-      |> Enum.shuffle()
-      |> Enum.split(Kernel.trunc(length(all_players) / 2))
+      all_players = Enum.concat([player_reserve, players_one, players_two])
 
-    team_one = Map.put(team_one, "players", players_one)
-    team_two = Map.put(team_two, "players", players_two)
+      {players_two, players_one} =
+        all_players
+        |> Enum.shuffle()
+        |> Enum.split(Kernel.trunc(length(all_players) / 2))
 
-    changeset
-    |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
-    |> Ash.Changeset.change_attribute(:player_reserve, [])
+      team_one = Map.put(team_one, "players", players_one)
+      team_two = Map.put(team_two, "players", players_two)
+
+      changeset
+      |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
+      |> Ash.Changeset.change_attribute(:player_reserve, [])
+    end
   end
 end

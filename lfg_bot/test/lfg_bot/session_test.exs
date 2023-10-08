@@ -282,6 +282,9 @@ defmodule LfgBot.SessionTest do
   test "prevents one user from joining more than once" do
     [user_one, user_two] = Enum.take(mock_users(), 2)
 
+    # ----------------
+    # test adding a duplicate user BEFORE the game has been started (state is :waiting)
+
     {:ok, session} =
       Ash.Changeset.new(Session)
       |> Ash.Changeset.for_create(:create)
@@ -301,6 +304,7 @@ defmodule LfgBot.SessionTest do
     assert message =~ "team"
 
     # ----------------
+    # test adding a duplicate user BEFORE the game has been started (state is :playing)
 
     {:ok, session} =
       Ash.Changeset.new(session)
