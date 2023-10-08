@@ -4,7 +4,7 @@ defmodule LfgBot.LfgSystem.Registry do
       Ash.Registry.ResourceValidations
     ]
 
-    entries do
-      entry LfgBot.LfgSystem.Session
-    end
+  entries do
+    entry LfgBot.LfgSystem.Session
+  end
 end
