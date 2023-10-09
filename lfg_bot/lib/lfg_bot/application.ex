@@ -17,7 +17,9 @@ defmodule LfgBot.Application do
       # Start Finch
       {Finch, name: LfgBot.Finch},
       # Start the Endpoint (http/https)
-      LfgBotWeb.Endpoint
+      LfgBotWeb.Endpoint,
+      LfgBot.Discord.Supervisor
+
       # Start a worker by calling: LfgBot.Worker.start_link(arg)
       # {LfgBot.Worker, arg}
     ]
