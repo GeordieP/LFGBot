@@ -64,16 +64,20 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
-           user: %{
-             id: user_id
-           },
+           user: %{id: invoker_id},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_SHUFFLE_TEAMS_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
-    IO.puts("shuffle teams event for session #{session_id}")
-    user_id = Snowflake.dump(user_id)
+    Api.create_interaction_response(interaction, %{type: 6})
+
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
+
+    Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
+      embeds: build_sesson_embeds(session)
+    )
 
     Api.create_interaction_response(interaction, %{type: 6})
   end
@@ -106,7 +110,6 @@ defmodule LfgBot.Discord.Bot do
            }
          } = interaction, _ws_state}
       ) do
-    # ACK the event right away
     Api.create_interaction_response(interaction, %{type: 6})
 
     {:ok, session} = LfgSystem.get(Session, session_id)
@@ -287,7 +290,11 @@ defmodule LfgBot.Discord.Bot do
   defp build_team_string([]), do: "*Empty*"
 
   defp build_team_string(team) when is_list(team),
-    do: Enum.map_join(team, "\n", &("- " <> &1.username))
+    do:
+      Enum.map_join(team, "\n", fn
+        %{"username" => username} -> "- " <> username
+        %{username: username} -> "- " <> username
+      end)
 
   @doc """
   Dump a Nostrum user struct into a more compact
