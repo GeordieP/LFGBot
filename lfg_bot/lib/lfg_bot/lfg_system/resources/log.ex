@@ -20,6 +20,10 @@ defmodule LfgBot.LfgSystem.Log do
   code_interface do
     define_for(LfgSystem)
     define(:new, action: :create)
+    define(:read, action: :read)
+    define(:read_info, action: :read_info)
+    define(:read_error, action: :read_error)
+    define(:read_warning, action: :read_warning)
   end
 
   actions do
