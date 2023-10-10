@@ -39,9 +39,14 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
     define_for(LfgSystem)
     define(:new, action: :create)
     define(:read, action: :read)
+    define(:get, action: :get)
   end
 
   actions do
     defaults([:create, :read, :update, :destroy])
+
+    read :get do
+      get?(true)
+    end
   end
 end
