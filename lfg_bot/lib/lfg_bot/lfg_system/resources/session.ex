@@ -189,8 +189,8 @@ defmodule LfgBot.LfgSystem.Session.Utils do
 
           %{"players" => players} ->
             Enum.find(players, nil, fn
-              %{"id" => id} -> id
-              %{id: id} -> id
+              %{"id" => id} -> id == new_player.id
+              %{id: id} -> id == new_player.id
             end)
         end)
 
@@ -273,16 +273,10 @@ defmodule LfgBot.LfgSystem.Session.Utils do
 
       all_players = Enum.concat([player_reserve, players_one, players_two])
 
-      IO.puts("before")
-      IO.inspect({players_one, players_two})
-
       {players_two, players_one} =
         all_players
         |> Enum.shuffle()
         |> Enum.split(Kernel.trunc(length(all_players) / 2))
-
-      IO.puts("after")
-      IO.inspect({players_one, players_two})
 
       team_one = Map.put(team_one, "players", players_one)
       team_two = Map.put(team_two, "players", players_two)
