@@ -9,6 +9,7 @@ defmodule LfgBot.Discord.Bot do
   alias Nostrum.Struct.User
   alias Nostrum.Snowflake
   alias Nostrum.Struct.Message
+  alias Nostrum.Struct.User
   alias Nostrum.Struct.Component.ActionRow
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
@@ -63,12 +64,16 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
+           user: %{
+             id: user_id
+           },
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_SHUFFLE_TEAMS_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
     IO.puts("shuffle teams event for session #{session_id}")
+    user_id = Snowflake.dump(user_id)
 
     Api.create_interaction_response(interaction, %{type: 6})
   end
@@ -85,6 +90,7 @@ defmodule LfgBot.Discord.Bot do
          } = interaction, _ws_state}
       ) do
     IO.puts("end session event for session #{session_id}")
+    user_id = Snowflake.dump(user_id)
     # with {:ok, session} <- LfgSystem.get(Session, session_id),
     # {:ok, %{state: :ended}} <-  do
     # end
@@ -94,13 +100,21 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
+           user: user,
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_PLAYER_JOIN_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
-    IO.puts("player join event for session #{session_id}")
+    # ACK the event right away
     Api.create_interaction_response(interaction, %{type: 6})
+
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.player_join(session, dump_user(user))
+
+    Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
+      embeds: build_sesson_embeds(session)
+    )
   end
 
   def handle_event(
@@ -124,7 +138,7 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{custom_id: "LFGBOT_START_SESSION"}
          }, _ws_state}
       ) do
-    {:ok, %{id: setup_msg_id} = message} =
+    {:ok, %{id: setup_msg_id}} =
       Api.create_message(channel_id, content: "Setting up a new game...")
 
     with {:ok, session} <-
@@ -143,6 +157,7 @@ defmodule LfgBot.Discord.Bot do
         )
     else
       anything ->
+        # TODO: log to error table
         IO.inspect(anything)
         Api.delete_message(channel_id, setup_msg_id)
     end
@@ -273,4 +288,29 @@ defmodule LfgBot.Discord.Bot do
 
   defp build_team_string(team) when is_list(team),
     do: Enum.map_join(team, "\n", &("- " <> &1.username))
+
+  @doc """
+  Dump a Nostrum user struct into a more compact
+  struct compatible with the database.
+  """
+  defp dump_user(%User{} = user) do
+    %{
+      id: Snowflake.dump(user.id),
+      username: user.username,
+      discriminator: user.discriminator,
+      avatar: user.avatar
+    }
+  end
+
+  @doc """
+  Cast a database user into a Nostrum-compatible struct.
+  """
+  defp cast_user(user) do
+    %{
+      id: Snowflake.cast!(user.id),
+      username: user.username,
+      discriminator: user.discriminator,
+      avatar: user.avatar
+    }
+  end
 end

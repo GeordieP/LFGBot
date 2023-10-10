@@ -190,7 +190,10 @@ defmodule LfgBot.LfgSystem.Session.Utils do
             nil
 
           %{"players" => players} ->
-            Enum.find(players, nil, &(&1.id == new_player.id))
+            Enum.find(players, nil, fn
+              %{"id" => id} -> id
+              %{id: id} -> id
+            end)
         end)
 
       cond do
