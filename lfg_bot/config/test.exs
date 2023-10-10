@@ -31,3 +31,6 @@ config :logger, level: :info
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# don't start nostrum in test
+config :lfg_bot, should_start_nostrum: false

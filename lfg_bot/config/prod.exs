@@ -11,6 +11,9 @@ import Config
 # before starting your production server.
 config :lfg_bot, LfgBotWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
+# start nostrum in prod
+config :lfg_bot, should_start_nostrum: true
+
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: LfgBot.Finch
 

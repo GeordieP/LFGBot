@@ -17,12 +17,18 @@ defmodule LfgBot.Application do
       # Start Finch
       {Finch, name: LfgBot.Finch},
       # Start the Endpoint (http/https)
-      LfgBotWeb.Endpoint,
-      LfgBot.Discord.Supervisor
+      LfgBotWeb.Endpoint
 
       # Start a worker by calling: LfgBot.Worker.start_link(arg)
       # {LfgBot.Worker, arg}
     ]
+
+    children =
+      if Application.get_env(:lfg_bot, :should_start_nostrum) do
+        children ++ [LfgBot.Discord.Supervisor]
+      else
+        children
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

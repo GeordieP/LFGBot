@@ -20,30 +20,32 @@ if System.get_env("PHX_SERVER") do
   config :lfg_bot, LfgBotWeb.Endpoint, server: true
 end
 
-nostrum_token =
-  case System.get_env("LFG_NOSTRUM_TOKEN") do
-    token when is_binary(token) -> token
-    _ -> raise("!! Could not find env var LFG_NOSTRUM_TOKEN")
-  end
+unless config_env() == :test do
+  nostrum_token =
+    case System.get_env("LFG_NOSTRUM_TOKEN") do
+      token when is_binary(token) -> token
+      _ -> raise("!! Could not find env var LFG_NOSTRUM_TOKEN")
+    end
 
-config :nostrum,
-  token: nostrum_token,
-  # https://discord.com/developers/docs/topics/gateway#gateway-intents
-  gateway_intents: [
-    :guilds,
-    # :guild_integrations, # may need this, not sure what it is
-    # :guild_webhooks,
-    # :guild_invites,
-    # :guild_voice_states,
-    :guild_messages,
-    :guild_message_reactions
-    # :guild_message_typing, # may need this to send messages? or is it for typing status?
-    # :direct_messages,
-    # :direct_message_reactions,
-    # :direct_message_typing,
-    # :message_content
-    # :guild_scheduled_events
-  ]
+  config :nostrum,
+    token: nostrum_token,
+    # https://discord.com/developers/docs/topics/gateway#gateway-intents
+    gateway_intents: [
+      :guilds,
+      # :guild_integrations, # may need this, not sure what it is
+      # :guild_webhooks,
+      # :guild_invites,
+      # :guild_voice_states,
+      :guild_messages,
+      :guild_message_reactions
+      # :guild_message_typing, # may need this to send messages? or is it for typing status?
+      # :direct_messages,
+      # :direct_message_reactions,
+      # :direct_message_typing,
+      # :message_content
+      # :guild_scheduled_events
+    ]
+end
 
 if config_env() == :prod do
   database_url =

@@ -55,7 +55,7 @@ defmodule LfgBot.MixProject do
       {:ash_postgres, "~> 1.3"},
       {:ash_phoenix, "~> 1.2"},
       {:ash_state_machine, "~> 0.2.2"},
-      {:nostrum, "~> 0.8.0"}
+      {:nostrum, "~> 0.8.0", runtime: Mix.env() != :test}
     ]
   end
 
