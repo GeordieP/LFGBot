@@ -70,8 +70,6 @@ defmodule LfgBot.Discord.Bot do
            }
          } = interaction, _ws_state}
       ) do
-    Api.create_interaction_response(interaction, %{type: 6})
-
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
 
@@ -79,26 +77,25 @@ defmodule LfgBot.Discord.Bot do
       embeds: build_sesson_embeds(session)
     )
 
-    Api.create_interaction_response(interaction, %{type: 6})
+    Api.create_interaction_response(interaction, %{type: 7})
   end
 
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
-           user: %{
-             id: user_id
-           },
+           user: %{id: invoker_id},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_END_SESSION_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
-    IO.puts("end session event for session #{session_id}")
-    user_id = Snowflake.dump(user_id)
-    # with {:ok, session} <- LfgSystem.get(Session, session_id),
-    # {:ok, %{state: :ended}} <-  do
-    # end
+    {:ok, session} = LfgSystem.get(Session, session_id)
+
+    {:ok, %{state: :ended} = session} =
+      Session.terminate_session(session, Snowflake.dump(invoker_id))
+
     Api.create_interaction_response(interaction, %{type: 6})
+    Api.delete_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id))
   end
 
   def handle_event(
@@ -110,26 +107,33 @@ defmodule LfgBot.Discord.Bot do
            }
          } = interaction, _ws_state}
       ) do
-    Api.create_interaction_response(interaction, %{type: 6})
-
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.player_join(session, dump_user(user))
 
     Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
       embeds: build_sesson_embeds(session)
     )
+
+    Api.create_interaction_response(interaction, %{type: 7})
   end
 
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
+           user: %{id: invoker_id},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_PLAYER_LEAVE_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
-    IO.puts("player leave event for session #{session_id}")
-    Api.create_interaction_response(interaction, %{type: 6})
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
+
+    Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
+      embeds: build_sesson_embeds(session)
+    )
+
+    Api.create_interaction_response(interaction, %{type: 7})
   end
 
   def handle_event(
@@ -208,7 +212,7 @@ defmodule LfgBot.Discord.Bot do
     # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
     # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
     response = %{
-      type: 4,
+      type: 5,
       data: %{
         # suppress notifications: flag 1<<12
         flags: 1 <<< 12 &&& 1 <<< 6,

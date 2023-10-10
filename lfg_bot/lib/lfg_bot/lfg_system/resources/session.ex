@@ -241,14 +241,19 @@ defmodule LfgBot.LfgSystem.Session.Utils do
       %{"players" => players_one} = team_one
       %{"players" => players_two} = team_two
 
-      players_one = Enum.reject(players_one, &(&1.id == player_id))
-      players_two = Enum.reject(players_two, &(&1.id == player_id))
+      match_player = fn
+        %{"id" => id} -> id == player_id
+        %{id: id} -> id == player_id
+      end
+
+      players_one = Enum.reject(players_one, &match_player.(&1))
+      players_two = Enum.reject(players_two, &match_player.(&1))
 
       team_one = Map.put(team_one, "players", players_one)
       team_two = Map.put(team_two, "players", players_two)
 
       player_reserve = Ash.Changeset.get_attribute(changeset, :player_reserve)
-      player_reserve = Enum.reject(player_reserve, &(&1.id == player_id))
+      player_reserve = Enum.reject(player_reserve, &match_player.(&1))
 
       changeset
       |> Ash.Changeset.change_attribute(:teams, [team_one, team_two])
