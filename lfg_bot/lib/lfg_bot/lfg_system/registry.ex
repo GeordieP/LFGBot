@@ -6,5 +6,6 @@ defmodule LfgBot.LfgSystem.Registry do
 
   entries do
     entry LfgBot.LfgSystem.Session
+    entry LfgBot.LfgSystem.Log
   end
 end

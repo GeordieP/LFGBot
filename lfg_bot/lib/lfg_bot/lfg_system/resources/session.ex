@@ -171,8 +171,6 @@ defmodule LfgBot.LfgSystem.Session do
 end
 
 defmodule LfgBot.LfgSystem.Session.Utils do
-  alias LfgBot.LfgSystem.Session
-
   def add_player(changeset, new_player) do
     state = Ash.Changeset.get_attribute(changeset, :state)
 
