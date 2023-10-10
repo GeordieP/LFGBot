@@ -12,19 +12,32 @@ defmodule LfgBot.LfgSystem.Log do
 
   attributes do
     uuid_primary_key(:id)
-    attribute :type, LogType
-    attribute :data, :string
+    attribute(:type, LogType)
+    attribute(:data, :string)
+    create_timestamp(:inserted_at)
   end
 
   code_interface do
     define_for(LfgSystem)
     define(:new, action: :create)
-    define(:read, action: :read)
-    define(:update, action: :update)
-    define(:destroy, action: :destroy)
   end
 
   actions do
     defaults([:create, :read, :update, :destroy])
+
+    read :read_info do
+      prepare(build(limit: 15, sort: [:inserted_at]))
+      filter(expr(type == :info))
+    end
+
+    read :read_error do
+      prepare(build(limit: 15, sort: [:inserted_at]))
+      filter(expr(type == :error))
+    end
+
+    read :read_warning do
+      prepare(build(limit: 15, sort: [:inserted_at]))
+      filter(expr(type == :warning))
+    end
   end
 end
