@@ -111,14 +111,14 @@ defmodule LfgBot.Discord.Bot do
          %Interaction{
            channel_id: channel_id,
            guild_id: guild_id,
+           user: %{id: leader_user_id, username: leader_user_name},
            data: %ApplicationCommandInteractionData{custom_id: "LFGBOT_START_SESSION"}
          }, _ws_state}
       ) do
-    {:ok, %{id: setup_msg_id, author: author} = message} =
+    {:ok, %{id: setup_msg_id} = message} =
       Api.create_message(channel_id, content: "Setting up a new game...")
 
-    with %{id: leader_user_id, username: leader_user_name} <- author,
-         {:ok, session} <-
+    with {:ok, session} <-
            Session.new(%{
              guild_id: Snowflake.dump(guild_id),
              channel_id: Snowflake.dump(channel_id),
