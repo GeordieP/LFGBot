@@ -66,9 +66,11 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_SHUFFLE_TEAMS_" <> session_id
            }
-         }, _ws_state}
+         } = interaction, _ws_state}
       ) do
     IO.puts("shuffle teams event for session #{session_id}")
+
+    Api.create_interaction_response(interaction, %{type: 6})
   end
 
   def handle_event(
@@ -80,12 +82,13 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_END_SESSION_" <> session_id
            }
-         }, _ws_state}
+         } = interaction, _ws_state}
       ) do
     IO.puts("end session event for session #{session_id}")
     # with {:ok, session} <- LfgSystem.get(Session, session_id),
     # {:ok, %{state: :ended}} <-  do
     # end
+    Api.create_interaction_response(interaction, %{type: 6})
   end
 
   def handle_event(
@@ -94,9 +97,10 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_PLAYER_JOIN_" <> session_id
            }
-         }, _ws_state}
+         } = interaction, _ws_state}
       ) do
     IO.puts("player join event for session #{session_id}")
+    Api.create_interaction_response(interaction, %{type: 6})
   end
 
   def handle_event(
@@ -105,9 +109,10 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_PLAYER_LEAVE_" <> session_id
            }
-         }, _ws_state}
+         } = interaction, _ws_state}
       ) do
     IO.puts("player leave event for session #{session_id}")
+    Api.create_interaction_response(interaction, %{type: 6})
   end
 
   def handle_event(
