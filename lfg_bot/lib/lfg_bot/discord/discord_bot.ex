@@ -68,6 +68,7 @@ defmodule LfgBot.Discord.Bot do
            }
          }, _ws_state}
       ) do
+    IO.puts("shuffle teams event for session #{session_id}")
   end
 
   def handle_event(
@@ -81,6 +82,7 @@ defmodule LfgBot.Discord.Bot do
            }
          }, _ws_state}
       ) do
+    IO.puts("end session event for session #{session_id}")
     # with {:ok, session} <- LfgSystem.get(Session, session_id),
     # {:ok, %{state: :ended}} <-  do
     # end
@@ -94,6 +96,7 @@ defmodule LfgBot.Discord.Bot do
            }
          }, _ws_state}
       ) do
+    IO.puts("player join event for session #{session_id}")
   end
 
   def handle_event(
@@ -104,6 +107,7 @@ defmodule LfgBot.Discord.Bot do
            }
          }, _ws_state}
       ) do
+    IO.puts("player leave event for session #{session_id}")
   end
 
   def handle_event(
