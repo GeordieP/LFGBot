@@ -137,8 +137,9 @@ defmodule LfgBot.Discord.Bot do
            }) do
       {:ok, _message} =
         Api.edit_message(channel_id, setup_msg_id,
-          content: LfgBot.LfgSystem.Session.Utils.build_sesson_message(session),
-          components: build_session_buttons(session.id)
+          content: "",
+          embeds: build_sesson_embeds(session),
+          components: build_session_buttons(session)
         )
     else
       anything ->
@@ -192,7 +193,7 @@ defmodule LfgBot.Discord.Bot do
       type: 4,
       data: %{
         # suppress notifications: flag 1<<12
-        flags: 1 <<< 12,
+        flags: 1 <<< 12 &&& 1 <<< 6,
         components: [action_row],
         embeds: [
           message_embed
@@ -211,7 +212,7 @@ defmodule LfgBot.Discord.Bot do
 
   # ------------------
 
-  defp build_session_buttons(session_id) do
+  defp build_session_buttons(%{id: session_id}) do
     leader_buttons_row =
       ActionRow.action_row()
       |> ActionRow.append(
@@ -244,4 +245,32 @@ defmodule LfgBot.Discord.Bot do
 
     [leader_buttons_row, user_buttons_row]
   end
+
+  defp build_sesson_embeds(%Session{} = session) do
+    alias Nostrum.Struct.Embed
+
+    [team_one, team_two] = session.teams
+
+    name_label =
+      if String.last(session.leader_user_name) == "s" do
+        session.leader_user_name <> "' group"
+      else
+        session.leader_user_name <> "'s group"
+      end
+
+    teams_embed =
+      %Embed{}
+      |> Embed.put_title(name_label)
+      |> Embed.put_color(0xFF6600)
+      |> Embed.put_description("Click `Join Game` to join a team!")
+      |> Embed.put_field("TEAM 1", build_team_string(team_one["players"]), true)
+      |> Embed.put_field("TEAM 2", build_team_string(team_two["players"]), true)
+
+    [teams_embed]
+  end
+
+  defp build_team_string([]), do: "*Empty*"
+
+  defp build_team_string(team) when is_list(team),
+    do: Enum.map_join(team, "\n", &("- " <> &1.username))
 end

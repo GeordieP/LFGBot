@@ -86,7 +86,7 @@ defmodule LfgBot.LfgSystem.Session do
         allow_nil?(false)
       end
 
-      change fn changeset, _ ->
+      change(fn changeset, _ ->
         invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
         leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
 
@@ -98,7 +98,7 @@ defmodule LfgBot.LfgSystem.Session do
             "only the session leader can perform this action"
           )
         end
-      end
+      end)
     end
 
     update :end_game do
@@ -280,32 +280,4 @@ defmodule LfgBot.LfgSystem.Session.Utils do
       |> Ash.Changeset.change_attribute(:player_reserve, [])
     end
   end
-
-  def build_sesson_message(%Session{} = session) do
-    [team_one, team_two] = session.teams
-
-    name_label =
-      if String.last(session.leader_user_name) == "s" do
-        session.leader_user_name <> "' group"
-      else
-        session.leader_user_name <> "'s group"
-      end
-
-    """
-    **#{name_label}**
-
-    **TEAM 1**
-    #{build_team_string(team_one["players"])}
-
-    **TEAM 2**
-    #{build_team_string(team_two["players"])}
-
-    > Click "Join Game" to join a team!
-    """
-  end
-
-  defp build_team_string([]), do: "*Empty*"
-
-  defp build_team_string(team) when is_list(team),
-    do: Enum.map_join(team, "\n", &("- " <> &1.username))
 end
