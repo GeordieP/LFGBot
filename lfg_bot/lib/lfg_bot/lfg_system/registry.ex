@@ -5,7 +5,8 @@ defmodule LfgBot.LfgSystem.Registry do
     ]
 
   entries do
-    entry LfgBot.LfgSystem.Session
-    entry LfgBot.LfgSystem.Log
+    entry(LfgBot.LfgSystem.Session)
+    entry(LfgBot.LfgSystem.Log)
+    entry(LfgBot.LfgSystem.RegisteredGuildChannel)
   end
 end
