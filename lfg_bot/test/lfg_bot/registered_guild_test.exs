@@ -8,15 +8,13 @@ defmodule LfgBot.RegisteredGuildChannelTest do
     {:ok, guild_channel} =
       RegisteredGuildChannel.new(%{
         guild_id: "first guild",
-        intro_channel_id: "first channel",
-        intro_message_id: "first message"
+        intro_channel_id: "first channel"
       })
 
     {:error, %Ash.Error.Invalid{errors: errors}} =
       RegisteredGuildChannel.new(%{
         guild_id: "first guild",
-        intro_channel_id: "first channel",
-        intro_message_id: "first message"
+        intro_channel_id: "first channel"
       })
 
     error = Enum.at(errors, 0)
@@ -24,34 +22,38 @@ defmodule LfgBot.RegisteredGuildChannelTest do
   end
 
   test "allows fetching a registered guild by guild id and channel id" do
-    {:ok, guild_channel} =
+    {:ok, _first_channel} =
       RegisteredGuildChannel.new(%{
         guild_id: "first guild",
-        intro_channel_id: "first channel",
-        intro_message_id: "first message"
+        intro_channel_id: "first channel"
+      })
+
+    {:ok, second_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "second guild",
+        intro_channel_id: "second channel"
       })
 
     {:ok, %RegisteredGuildChannel{} = found} =
-      RegisteredGuildChannel.get(%{guild_id: "first guild", intro_channel_id: "first channel"})
+      RegisteredGuildChannel.get_by_guild_and_channel("second guild", "second channel")
 
-    assert found.id == guild_channel.id
+    assert found.id == second_channel.id
   end
 
-  test "allows fetching a registered guild by guild id and channel id and message id" do
-    {:ok, guild_channel} =
+  test "bang function returns nil for an unrecognized guild" do
+    {:ok, _guild_channel} =
       RegisteredGuildChannel.new(%{
         guild_id: "first guild",
-        intro_channel_id: "first channel",
-        intro_message_id: "first message"
+        intro_channel_id: "first channel"
       })
 
-    {:ok, %RegisteredGuildChannel{} = found} =
-      RegisteredGuildChannel.get(%{
-        guild_id: "first guild",
-        intro_channel_id: "first channel",
-        intro_message_id: "first message"
+    {:ok, _guild_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "second guild",
+        intro_channel_id: "second channel"
       })
 
-    assert found.id == guild_channel.id
+    assert {:error, %Ash.Error.Query.NotFound{}} =
+             RegisteredGuildChannel.get_by_guild_and_channel("third guild", "third channel")
   end
 end

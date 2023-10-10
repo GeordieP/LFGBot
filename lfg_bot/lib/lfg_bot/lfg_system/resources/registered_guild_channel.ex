@@ -22,31 +22,40 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
       allow_nil?(false)
     end
 
-    # ID of the introduction/help message
-    attribute(:intro_message_id, :string) do
-      allow_nil?(false)
-    end
-
     create_timestamp(:inserted_at)
     create_timestamp(:updated_at)
   end
 
   identities do
-    identity(:unique_server, [:guild_id, :intro_channel_id, :intro_message_id])
+    identity(:unique_server, [:guild_id, :intro_channel_id])
   end
 
   code_interface do
     define_for(LfgSystem)
     define(:new, action: :create)
     define(:read, action: :read)
-    define(:get, action: :get)
+
+    define(:get_by_guild_and_channel,
+      action: :get_by_guild_and_channel,
+      args: [:guild_id, :intro_channel_id]
+    )
   end
 
   actions do
     defaults([:create, :read, :update, :destroy])
 
-    read :get do
+    read :get_by_guild_and_channel do
       get?(true)
+
+      argument :intro_channel_id, :string do
+        allow_nil?(false)
+      end
+
+      argument :guild_id, :string do
+        allow_nil?(false)
+      end
+
+      filter(expr(guild_id == ^arg(:guild_id) and intro_channel_id == ^arg(:intro_channel_id)))
     end
   end
 end

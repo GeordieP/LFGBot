@@ -12,14 +12,13 @@ defmodule LfgBot.Repo.Migrations.AddRegisteredGuildChannel do
       add :id, :uuid, null: false, default: fragment("uuid_generate_v4()"), primary_key: true
       add :guild_id, :text, null: false
       add :intro_channel_id, :text, null: false
-      add :intro_message_id, :text
       add :inserted_at, :utc_datetime_usec, null: false, default: fragment("now()")
       add :updated_at, :utc_datetime_usec, null: false, default: fragment("now()")
     end
 
     create unique_index(
              :registered_guild_channel,
-             [:guild_id, :intro_channel_id, :intro_message_id],
+             [:guild_id, :intro_channel_id],
              name: "registered_guild_channel_unique_server_index"
            )
   end
@@ -27,7 +26,7 @@ defmodule LfgBot.Repo.Migrations.AddRegisteredGuildChannel do
   def down do
     drop_if_exists unique_index(
                      :registered_guild_channel,
-                     [:guild_id, :intro_channel_id, :intro_message_id],
+                     [:guild_id, :intro_channel_id],
                      name: "registered_guild_channel_unique_server_index"
                    )
 
