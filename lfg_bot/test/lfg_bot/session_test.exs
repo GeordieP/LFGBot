@@ -4,70 +4,59 @@ defmodule LfgBot.SessionTest do
   alias LfgBot.LfgSystem
   alias LfgBot.LfgSystem.Session
 
-  describe "session behavior" do
-    test "distributes new players evenly into two teams when a game has not started (default waiting state)" do
-      [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
+  test "distributes new players evenly into two teams when a game has not started (default waiting state)" do
+    [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
 
-      {:ok, session} =
-        Ash.Changeset.new(Session)
-        |> Ash.Changeset.for_create(:create)
-        |> LfgSystem.create()
+    {:ok, session} =
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
-      assert %Session{} = session
+    assert %Session{} = session
 
-      # ----------------
+    # ----------------
 
-      {:ok, session} =
-        Ash.Changeset.new(session)
-        |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-        |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
 
-      %Session{teams: [%{"players" => [check_player_one]}, _]} = session
-      assert check_player_one.id == user_one.id
+    %Session{teams: [%{"players" => [check_player_one]}, _]} = session
+    assert check_player_one.id == user_one.id
 
-      # ----------------
+    # ----------------
 
-      {:ok, session} =
-        Ash.Changeset.new(session)
-        |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-        |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_two)
 
-      %Session{teams: [_, %{"players" => [check_player_two]}]} = session
-      assert check_player_two.id == user_two.id
+    %Session{teams: [_, %{"players" => [check_player_two]}]} = session
+    assert check_player_two.id == user_two.id
 
-      # ----------------
+    # ----------------
 
-      {:ok, session} =
-        Ash.Changeset.new(session)
-        |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
-        |> LfgSystem.update()
-
-      %Session{teams: [%{"players" => [check_player_one, check_player_three]}, _]} = session
-      assert check_player_three.id == user_three.id
-    end
+    {:ok, session} = Session.player_join(session, user_three)
+    %Session{teams: [%{"players" => [check_player_one, check_player_three]}, _]} = session
+    assert check_player_three.id == user_three.id
   end
 
   test "adds players to the reserve when the session is in a game" do
     [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
 
     {:ok, session} =
-      Ash.Changeset.new(Session)
-      |> Ash.Changeset.for_create(:create)
-      |> LfgSystem.create()
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
     assert %Session{} = session
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -76,10 +65,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:start_game)
-      |> LfgSystem.update()
+    {:ok, session} = Session.start_game(session, "leader_user_id")
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -89,10 +75,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_three)
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -107,23 +90,20 @@ defmodule LfgBot.SessionTest do
     [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
 
     {:ok, session} =
-      Ash.Changeset.new(Session)
-      |> Ash.Changeset.for_create(:create)
-      |> LfgSystem.create()
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
     assert %Session{} = session
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -132,10 +112,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:start_game)
-      |> LfgSystem.update()
+    {:ok, session} = Session.start_game(session, "leader_user_id")
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -145,10 +122,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_three)
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -160,10 +134,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_leave, user_three)
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_leave(session, user_three.id)
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -176,29 +147,23 @@ defmodule LfgBot.SessionTest do
     [user_one, user_two] = Enum.take(mock_users(), 2)
 
     {:ok, session} =
-      Ash.Changeset.new(Session)
-      |> Ash.Changeset.for_create(:create)
-      |> LfgSystem.create()
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
     assert %Session{} = session
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
 
     # start the game. currently, removing players while a game is in progress is allowed, but this could change (update this test if it doe change).
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:start_game)
-      |> LfgSystem.update()
+    {:ok, session} = Session.start_game(session, "leader_user_id")
 
     assert %Session{
              teams: [%{"players" => [check_player_one]}, %{"players" => [check_player_two]}],
@@ -208,10 +173,7 @@ defmodule LfgBot.SessionTest do
 
     # ----------------
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_leave, user_one)
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_leave(session, user_one.id)
 
     assert %Session{
              teams: [%{"players" => []}, %{"players" => [check_player_two]}],
@@ -224,29 +186,19 @@ defmodule LfgBot.SessionTest do
     [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
 
     {:ok, session} =
-      Ash.Changeset.new(Session)
-      |> Ash.Changeset.for_create(:create)
-      |> LfgSystem.create()
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
+    {:ok, session} = Session.start_game(session, "leader_user_id")
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:start_game)
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_three})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_three)
 
     assert %Session{
              teams: [%{"players" => players_one}, %{"players" => players_two}],
@@ -257,10 +209,7 @@ defmodule LfgBot.SessionTest do
     all_players_cache = Enum.concat([players_one, players_two, players_three])
     assert length(all_players_cache) == 3
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:shuffle_teams)
-      |> LfgSystem.update()
+    {:ok, session} = Session.shuffle_teams(session, "leader_user_id")
 
     assert %Session{
              teams: [%{"players" => players_one}, %{"players" => players_two}],
@@ -286,19 +235,18 @@ defmodule LfgBot.SessionTest do
     # test adding a duplicate user BEFORE the game has been started (state is :waiting)
 
     {:ok, session} =
-      Ash.Changeset.new(Session)
-      |> Ash.Changeset.for_create(:create)
-      |> LfgSystem.create()
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
+    {:ok, session} = Session.player_join(session, user_one)
 
     {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.InvalidChanges{message: message}]}} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_one})
-      |> LfgSystem.update()
+      Session.player_join(session, user_one)
 
     assert message =~ "already in"
     assert message =~ "team"
@@ -306,20 +254,11 @@ defmodule LfgBot.SessionTest do
     # ----------------
     # test adding a duplicate user BEFORE the game has been started (state is :playing)
 
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:start_game)
-      |> LfgSystem.update()
-
-    {:ok, session} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
+    {:ok, session} = Session.start_game(session, "leader_user_id")
+    {:ok, session} = Session.player_join(session, user_two)
 
     {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.InvalidChanges{message: message}]}} =
-      Ash.Changeset.new(session)
-      |> Ash.Changeset.for_update(:player_join, %{new_player: user_two})
-      |> LfgSystem.update()
+      Session.player_join(session, user_two)
 
     assert message =~ "already in"
     assert message =~ "reserve"

@@ -3,6 +3,7 @@ defmodule LfgBot.LfgSystem.Session do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshStateMachine]
 
+  alias LfgBot.LfgSystem
   alias LfgBot.LfgSystem.Session.Utils
 
   postgres do
@@ -16,10 +17,38 @@ defmodule LfgBot.LfgSystem.Session do
     attribute(:error, :string)
     attribute(:error_state, :string)
 
+    # ID of the game control message
+    attribute :message_id, :string do
+      allow_nil?(false)
+    end
+
+    # ID of the channel the control message is in
+    attribute :channel_id, :string do
+      allow_nil?(false)
+    end
+
+    # ID of the guild the control channel is in
+    attribute :guild_id, :string do
+      allow_nil?(false)
+    end
+
+    # ID of the user who's controlling the group
+    attribute :leader_user_id, :string do
+      allow_nil?(false)
+    end
+
+    # name of the user who's controlling the group (used for displaying the message)
+    attribute :leader_user_name, :string do
+      allow_nil?(false)
+    end
+
+    # holds players that have joined while a game is in progress
+    # players in the reserve will be mixed into the teams on the next shuffle
     attribute :player_reserve, {:array, :map} do
       default([])
     end
 
+    # two teams of players. players are nostrum user structs
     attribute :teams, {:array, :map} do
       default([%{"players" => []}, %{"players" => []}])
     end
@@ -37,19 +66,73 @@ defmodule LfgBot.LfgSystem.Session do
     end
   end
 
+  code_interface do
+    define_for(LfgSystem)
+    define(:new, action: :create)
+    define(:player_join, action: :player_join, args: [:new_player])
+    define(:player_leave, action: :player_leave, args: [:player_id])
+
+    define(:start_game, action: :start_game, args: [:invoker_user_id])
+    define(:end_game, action: :end_game, args: [:invoker_user_id])
+    define(:shuffle_teams, action: :shuffle_teams, args: [:invoker_user_id])
+    define(:terminate_session, action: :terminate_session, args: [:invoker_user_id])
+  end
+
   actions do
     defaults([:create, :read])
 
     update :start_game do
-      change(transition_state(:playing))
+      argument :invoker_user_id, :string do
+        allow_nil?(false)
+      end
+
+      change fn changeset, _ ->
+        invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
+        leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
+
+        if invoker_user_id == leader_user_id do
+          Ash.Changeset.change_attribute(changeset, :state, :playing)
+        else
+          Ash.Changeset.add_error(
+            changeset,
+            "only the session leader can perform this action"
+          )
+        end
+      end
     end
 
     update :end_game do
-      change(transition_state(:waiting))
+      argument :invoker_user_id, :string do
+        allow_nil?(false)
+      end
+
+      change(fn changeset, _ ->
+        invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
+        leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
+
+        if invoker_user_id == leader_user_id do
+          Ash.Changeset.change_attribute(changeset, :state, :waiting)
+        else
+          Ash.Changeset.add_error(changeset, "only the session leader can perform this action")
+        end
+      end)
     end
 
     update :terminate_session do
-      change(transition_state(:ended))
+      argument :invoker_user_id, :string do
+        allow_nil?(false)
+      end
+
+      change(fn changeset, _ ->
+        invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
+        leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
+
+        if invoker_user_id == leader_user_id do
+          Ash.Changeset.change_attribute(changeset, :state, :ended)
+        else
+          Ash.Changeset.add_error(changeset, "only the session leader can perform this action")
+        end
+      end)
     end
 
     update :error do
@@ -69,13 +152,13 @@ defmodule LfgBot.LfgSystem.Session do
     end
 
     update :player_leave do
-      argument :id, :string do
+      argument :player_id, :string do
         allow_nil?(false)
       end
 
       change(fn changeset, _ ->
-        id = Ash.Changeset.get_argument(changeset, :id)
-        Utils.remove_player(changeset, id)
+        player_id = Ash.Changeset.get_argument(changeset, :player_id)
+        Utils.remove_player(changeset, player_id)
       end)
     end
 
@@ -88,6 +171,8 @@ defmodule LfgBot.LfgSystem.Session do
 end
 
 defmodule LfgBot.LfgSystem.Session.Utils do
+  alias LfgBot.LfgSystem.Session
+
   def add_player(changeset, new_player) do
     state = Ash.Changeset.get_attribute(changeset, :state)
 
@@ -195,4 +280,32 @@ defmodule LfgBot.LfgSystem.Session.Utils do
       |> Ash.Changeset.change_attribute(:player_reserve, [])
     end
   end
+
+  def build_sesson_message(%Session{} = session) do
+    [team_one, team_two] = session.teams
+
+    name_label =
+      if String.last(session.leader_user_name) == "s" do
+        session.leader_user_name <> "' group"
+      else
+        session.leader_user_name <> "'s group"
+      end
+
+    """
+    **#{name_label}**
+
+    **TEAM 1**
+    #{build_team_string(team_one["players"])}
+
+    **TEAM 2**
+    #{build_team_string(team_two["players"])}
+
+    > Click "Join Game" to join a team!
+    """
+  end
+
+  defp build_team_string([]), do: "*Empty*"
+
+  defp build_team_string(team) when is_list(team),
+    do: Enum.map_join(team, "\n", &("- " <> &1.username))
 end
