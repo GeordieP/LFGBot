@@ -1,15 +1,16 @@
 defmodule LfgBot.Discord.Bot do
   use Nostrum.Consumer
 
+  require Logger
   alias LfgBot.LfgSystem
   alias LfgBot.LfgSystem.Session
+  alias LfgBot.LfgSystem.RegisteredGuildChannel
   alias Nostrum.Api
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
   alias Nostrum.Struct.User
   alias Nostrum.Snowflake
   alias Nostrum.Struct.Message
-  alias Nostrum.Struct.User
   alias Nostrum.Struct.Component.ActionRow
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
@@ -64,12 +65,16 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
-           user: %{id: invoker_id},
+           user: %{id: invoker_id, username: invoker_username},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_SHUFFLE_TEAMS_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
+    Logger.debug(
+      "[DISCORD EVENT] [SHUFFLE TEAMS] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
 
@@ -83,12 +88,16 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
-           user: %{id: invoker_id},
+           user: %{id: invoker_id, username: invoker_username},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_END_SESSION_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
+    Logger.debug(
+      "[DISCORD EVENT] [END SESSION] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
     {:ok, session} = LfgSystem.get(Session, session_id)
 
     {:ok, %{state: :ended} = session} =
@@ -107,6 +116,10 @@ defmodule LfgBot.Discord.Bot do
            }
          } = interaction, _ws_state}
       ) do
+    Logger.debug(
+      "[DISCORD EVENT] [PLAYER JOIN] player: #{user.username} #{user.id} | session id: #{session_id}"
+    )
+
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.player_join(session, dump_user(user))
 
@@ -120,12 +133,16 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
-           user: %{id: invoker_id},
+           user: %{id: invoker_id, username: invoker_username},
            data: %ApplicationCommandInteractionData{
              custom_id: "LFGBOT_PLAYER_LEAVE_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
+    Logger.debug(
+      "[DISCORD EVENT] [PLAYER LEAVE] player: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
 
@@ -145,6 +162,8 @@ defmodule LfgBot.Discord.Bot do
            data: %ApplicationCommandInteractionData{custom_id: "LFGBOT_START_SESSION"}
          }, _ws_state}
       ) do
+    Logger.debug("[DISCORD EVENT] [START SESSION] leader: #{leader_user_name} #{leader_user_id}")
+
     {:ok, %{id: setup_msg_id}} =
       Api.create_message(channel_id, content: "Setting up a new game...")
 
@@ -170,22 +189,34 @@ defmodule LfgBot.Discord.Bot do
     end
   end
 
+  @doc """
+  Handle the initial setup command interaction
+  """
   def handle_event(
         {:INTERACTION_CREATE,
-         %Interaction{data: %ApplicationCommandInteractionData{name: @command_name}} =
-           interaction, _}
+         %Interaction{
+           channel_id: channel_id,
+           guild_id: guild_id,
+           user: %{id: invoker_user_id, username: invoker_user_name},
+           data: %ApplicationCommandInteractionData{name: @command_name}
+         } = interaction, _}
       ) do
-    description = """
-    A Discord bot for inhouse games
-    *by <@84203400920563712>*
+    Logger.debug(
+      "[DISCORD EVENT] [SETUP] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
+    )
 
-    **Click 'New Game' below to start a group!**
-    The bot will send a message in this channel with buttons to join/leave the group, shuffle teams, and end the session.
+    # # ensure we don't run any of this logic when the channel is found. just crash when a channel is found
+    {:error, %Ash.Error.Query.NotFound{}} =
+      RegisteredGuildChannel.get_by_guild_and_channel(
+        Snowflake.dump(guild_id),
+        Snowflake.dump(channel_id)
+      )
 
-    Buttons with the 🔒 emoji can only be used by the group creator.
-
-    Have fun!
-    """
+    {:ok, %RegisteredGuildChannel{}} =
+      RegisteredGuildChannel.new(%{
+        guild_id: Snowflake.dump(guild_id),
+        intro_channel_id: Snowflake.dump(channel_id)
+      })
 
     message_embed =
       %Embed{}
@@ -194,7 +225,7 @@ defmodule LfgBot.Discord.Bot do
       # |> Embed.put_author("GP")
       # |> Embed.put_url("https://github.com/geordiep/lfg_bot")
       |> Embed.put_color(0xFF6600)
-      |> Embed.put_description(description)
+      |> Embed.put_description(introduction_message())
 
     # docs:
     # button options - presumably default discord options: https://discord.com/developers/docs/interactions/message-components#button-object-button-structure
@@ -212,10 +243,10 @@ defmodule LfgBot.Discord.Bot do
     # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
     # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
     response = %{
-      type: 5,
+      type: 4,
       data: %{
         # suppress notifications: flag 1<<12
-        flags: 1 <<< 12 &&& 1 <<< 6,
+        flags: 1 <<< 12,
         components: [action_row],
         embeds: [
           message_embed
@@ -323,5 +354,19 @@ defmodule LfgBot.Discord.Bot do
       discriminator: user.discriminator,
       avatar: user.avatar
     }
+  end
+
+  defp introduction_message do
+    """
+    A Discord bot for inhouse games
+    *by <@84203400920563712>*
+
+    **Click 'New Game' below to start a group!**
+    The bot will send a message in this channel with buttons to join/leave the group, shuffle teams, and end the session.
+
+    Buttons with the 🔒 emoji can only be used by the group creator.
+
+    Have fun!
+    """
   end
 end
