@@ -264,6 +264,26 @@ defmodule LfgBot.SessionTest do
     assert message =~ "reserve"
   end
 
+  test "prevents non-leader user from shuffling teams" do
+    [user_one, user_two, user_three] = Enum.take(mock_users(), 3)
+
+    {:ok, session} =
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
+
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
+    {:ok, session} = Session.player_join(session, user_three)
+    {:error, %Ash.Error.Invalid{errors: errors}} = Session.shuffle_teams(session, user_two.id)
+    %Ash.Error.Changes.InvalidChanges{message: message} = Enum.at(errors, 0)
+    assert message =~ "perform this action"
+  end
+
   def mock_users do
     [
       mock_player("user_one"),

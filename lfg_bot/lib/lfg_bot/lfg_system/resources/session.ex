@@ -163,8 +163,19 @@ defmodule LfgBot.LfgSystem.Session do
     end
 
     update :shuffle_teams do
+      argument :invoker_user_id, :string do
+        allow_nil?(false)
+      end
+
       change(fn changeset, _ ->
-        Utils.shuffle_teams(changeset)
+        invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
+        leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
+
+        if invoker_user_id == leader_user_id do
+          Utils.shuffle_teams(changeset)
+        else
+          Ash.Changeset.add_error(changeset, "only the session leader can perform this action")
+        end
       end)
     end
   end
