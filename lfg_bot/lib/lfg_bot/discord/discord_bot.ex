@@ -17,12 +17,13 @@ defmodule LfgBot.Discord.Bot do
 
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-  # bot user id aka application id
-  @bot_user_id 1_160_972_219_061_645_312
-
   @command_name "lfginit"
+  @bot_ets_table :lfg_bot_table
 
-  def handle_event({:READY, %{guilds: guilds}, _ws_state}) do
+  def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
+    # store bot user ID in ETS for later reference
+    true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
+
     command = %{
       name: @command_name,
       description: "Initialize LFG Bot in the current channel"
@@ -190,7 +191,7 @@ defmodule LfgBot.Discord.Bot do
   end
 
   @doc """
-  Handle the initial setup command interaction
+  Handle the register channel event
   """
   def handle_event(
         {:INTERACTION_CREATE,
@@ -202,7 +203,7 @@ defmodule LfgBot.Discord.Bot do
          } = interaction, _}
       ) do
     Logger.debug(
-      "[DISCORD EVENT] [SETUP] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
+      "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
     )
 
     # # ensure we don't run any of this logic when the channel is found. just crash when a channel is found
@@ -257,9 +258,21 @@ defmodule LfgBot.Discord.Bot do
     Api.create_interaction_response(interaction, response)
   end
 
-  # # ignore messages from bots
-  # def handle_event({:MESSAGE_CREATE, msg, _ws_state}) when msg.author.bot,
-  #   do: :noop
+  # messages from bots
+  def handle_event({:MESSAGE_CREATE, %{author: %{id: msg_user_id, bot: true}} = msg, _ws_state}) do
+    with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id") do
+      if msg_user_id == bot_user_id do
+        handle_setup_msg(msg)
+      end
+    end
+  end
+
+  # TODO: don't send components with the init message on first send
+  def handle_setup_msg(%{content: "LFGREG:" <> registered_channel_db_id, id: message_id} = msg) do
+    # TODO: pull registered channel by id
+    # TODO: update the registered channel with the message id
+    # TODO: upgrade the init message to have components, and erase the init message
+  end
 
   def handle_event(_), do: :noop
 
