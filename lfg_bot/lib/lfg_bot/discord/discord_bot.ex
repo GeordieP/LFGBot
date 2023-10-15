@@ -183,10 +183,10 @@ defmodule LfgBot.Discord.Bot do
           components: build_session_buttons(session)
         )
     else
-      anything ->
-        # TODO: log to error table
-        IO.inspect(anything)
+      error ->
+        Logger.error("Failed to start session")
         Api.delete_message(channel_id, setup_msg_id)
+        raise error
     end
   end
 
@@ -206,46 +206,56 @@ defmodule LfgBot.Discord.Bot do
       "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
     )
 
-    # TODO: instead of crashing on the match below,
-    #       match on {:ok, %{message_id: message_id}} and then
-    #       ask the API if that message ID can be found.
-    #       if it is found, the channel is already set up and already has a reg message.
-    #       otherwise, we should send a new reg message.
-    #
-    # OLD:
-    # # ensure we don't run any of this logic when the channel is found. just crash when a channel is found
-    # {:error, %Ash.Error.Query.NotFound{}} =
-    #   RegisteredGuildChannel.get_by_guild_and_channel(
-    #     Snowflake.dump(guild_id),
-    #     Snowflake.dump(channel_id)
-    #   )
-
-    # store this guild and channel combo, take the DB-generated ID to
-    # send in the interaction response message
-    {:ok, %RegisteredGuildChannel{id: reg_id}} =
-      RegisteredGuildChannel.new(%{
-        guild_id: Snowflake.dump(guild_id),
-        channel_id: Snowflake.dump(channel_id)
-      })
-
     import Bitwise
-    # response docs:
-    # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
-    # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
-    # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
-    response = %{
-      type: 4,
-      data: %{
-        # suppress notifications: flag 1<<12
-        flags: 1 <<< 12,
-        content: "LFGREG:" <> reg_id
-      }
-    }
 
-    Api.create_interaction_response(interaction, response)
+    with {:ok, %{message_id: message_id}} <-
+           RegisteredGuildChannel.get_by_guild_and_channel(
+             Snowflake.dump(guild_id),
+             Snowflake.dump(channel_id)
+           ),
+         {:ok, %Message{} = message} <-
+           Api.get_channel_message(channel_id, Snowflake.cast!(message_id)) do
+      # channel already has a reg message
+      response = %{
+        type: 4,
+        data: %{
+          # ephemeral: flag 1<<6
+          flags: 1 <<< 6,
+          content:
+            "This channel is already registered! To re-register, a moderator will need to delete this message: #{Message.to_url(message)}"
+        }
+      }
+
+      Api.create_interaction_response(interaction, response)
+    else
+      {:error, _error} ->
+        # channel is not registered
+
+        # store this guild and channel combo, take the DB-generated ID to
+        # send in the interaction response message
+        {:ok, %RegisteredGuildChannel{id: reg_id}} =
+          RegisteredGuildChannel.new(%{
+            guild_id: Snowflake.dump(guild_id),
+            channel_id: Snowflake.dump(channel_id)
+          })
+
+        # response docs:
+        # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
+        # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
+        # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
+        response = %{
+          type: 4,
+          data: %{
+            # suppress notifications: flag 1<<12
+            flags: 1 <<< 12,
+            content: "LFGREG:" <> reg_id
+          }
+        }
+
+        Api.create_interaction_response(interaction, response)
+    end
   end
 
-  # messages from bots
   def handle_event(
         {:MESSAGE_CREATE,
          %{
@@ -253,7 +263,7 @@ defmodule LfgBot.Discord.Bot do
            id: message_id,
            channel_id: channel_id,
            author: %{id: msg_user_id, bot: true}
-         } = msg, _ws_state}
+         }, _ws_state}
       ) do
     with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id"),
          true = msg_user_id == bot_user_id,
@@ -267,10 +277,10 @@ defmodule LfgBot.Discord.Bot do
         components: build_registration_msg_components()
       )
     else
-      anything ->
+      error ->
         Logger.error("failed to attach to the registration message")
         Api.delete_message(channel_id, message_id)
-        IO.inspect(anything)
+        raise error
     end
   end
 
