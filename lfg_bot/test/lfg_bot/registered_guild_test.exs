@@ -39,6 +39,39 @@ defmodule LfgBot.RegisteredGuildChannelTest do
     assert {:error, %Ash.Error.Query.NotFound{}} =
              RegisteredGuildChannel.get_by_guild_and_channel("third guild", "third channel")
   end
+
+  test "updates an existing channel with a message id" do
+    {:ok, _guild_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "first guild",
+        channel_id: "first channel"
+      })
+
+    {:ok, %RegisteredGuildChannel{} = found} =
+      RegisteredGuildChannel.get_by_guild_and_channel("first guild", "first channel")
+
+    {:ok, %RegisteredGuildChannel{} = found} =
+      Ash.Changeset.for_update(found, :update, %{message_id: "test message id"})
+      |> LfgSystem.update()
+
+    assert "test message id" == found.message_id
+  end
+
+  test "updates an existing channel with a message id using code interface" do
+    {:ok, _guild_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "first guild",
+        channel_id: "first channel"
+      })
+
+    {:ok, %RegisteredGuildChannel{} = found} =
+      RegisteredGuildChannel.get_by_guild_and_channel("first guild", "first channel")
+
+    {:ok, %RegisteredGuildChannel{} = found} =
+      RegisteredGuildChannel.update_message_id(found, "test message id")
+
+    assert("test message id" == found.message_id)
+  end
 end
 
 # More tests ideas:

@@ -42,6 +42,8 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
       action: :get_by_guild_and_channel,
       args: [:guild_id, :channel_id]
     )
+
+    define :update_message_id, action: :update_message_id, args: [:message_id]
   end
 
   actions do
@@ -59,6 +61,14 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
       end
 
       filter(expr(guild_id == ^arg(:guild_id) and channel_id == ^arg(:channel_id)))
+    end
+
+    update :update_message_id do
+      argument :message_id, :string do
+        allow_nil? false
+      end
+
+      change set_attribute(:message_id, arg(:message_id))
     end
   end
 end
