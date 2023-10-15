@@ -216,7 +216,7 @@ defmodule LfgBot.Discord.Bot do
     {:ok, %RegisteredGuildChannel{}} =
       RegisteredGuildChannel.new(%{
         guild_id: Snowflake.dump(guild_id),
-        intro_channel_id: Snowflake.dump(channel_id)
+        channel_id: Snowflake.dump(channel_id)
       })
 
     message_embed =
@@ -259,16 +259,31 @@ defmodule LfgBot.Discord.Bot do
   end
 
   # messages from bots
-  def handle_event({:MESSAGE_CREATE, %{author: %{id: msg_user_id, bot: true}} = msg, _ws_state}) do
-    with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id") do
-      if msg_user_id == bot_user_id do
-        handle_setup_msg(msg)
-      end
+  def handle_event(
+        {:MESSAGE_CREATE,
+         %{
+           guild_id: guild_id,
+           channel_id: channel_id,
+           content: "LFGREG:" <> registered_channel_db_id,
+           id: message_id,
+           author: %{id: msg_user_id, bot: true}
+         } = msg, _ws_state}
+      ) do
+    with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id"),
+         true = msg_user_id == bot_user_id,
+         {:ok, reg_guild} = RegisteredGuildChannel.get_by_guild_and_channel(guild_id, channel_id),
+         {:ok, reg_guild} = add_msg_to_reg_guild(reg_guild, message_id) do
+      :ok
     end
   end
 
+  def add_msg_to_reg_guild(reg_guild, message_id) do
+    Ash.Changeset.for_update(reg_guild, :update, %{message_id: message_id})
+    |> LfgSystem.update()
+  end
+
   # TODO: don't send components with the init message on first send
-  def handle_setup_msg(%{content: "LFGREG:" <> registered_channel_db_id, id: message_id} = msg) do
+  def handle_setup_msg() do
     # TODO: pull registered channel by id
     # TODO: update the registered channel with the message id
     # TODO: upgrade the init message to have components, and erase the init message
