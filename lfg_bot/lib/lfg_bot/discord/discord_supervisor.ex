@@ -8,6 +8,7 @@ defmodule LfgBot.Discord.Supervisor do
   @impl true
   def init(_props) do
     children = [LfgBot.Discord.Bot]
+    _table = :ets.new(:lfg_bot_table, [:named_table, :set, :public])
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

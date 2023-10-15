@@ -17,37 +17,51 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
       allow_nil?(false)
     end
 
-    # ID of the channel the introduction/help message is in
-    attribute :intro_channel_id, :string do
+    # ID of the channel the registration message is in
+    attribute :channel_id, :string do
       allow_nil?(false)
     end
+
+    # ID of the registration message
+    attribute(:message_id, :string)
 
     create_timestamp(:inserted_at)
     create_timestamp(:updated_at)
   end
 
   identities do
-    identity(:unique_server, [:guild_id, :intro_channel_id])
+    identity(:unique_server, [:guild_id, :channel_id, :message_id])
   end
 
   code_interface do
     define_for(LfgSystem)
     define(:new, action: :create)
-    define(:read, action: :read)
+    define(:by_id, action: :by_id, args: [:id])
 
     define(:get_by_guild_and_channel,
       action: :get_by_guild_and_channel,
-      args: [:guild_id, :intro_channel_id]
+      args: [:guild_id, :channel_id]
     )
+
+    define :update_message_id, action: :update_message_id, args: [:message_id]
   end
 
   actions do
     defaults([:create, :read, :update, :destroy])
 
+    read :by_id do
+      argument :id, :string do
+        allow_nil? false
+      end
+
+      filter(expr(id == ^arg(:id)))
+      get? true
+    end
+
     read :get_by_guild_and_channel do
       get?(true)
 
-      argument :intro_channel_id, :string do
+      argument :channel_id, :string do
         allow_nil?(false)
       end
 
@@ -55,7 +69,15 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
         allow_nil?(false)
       end
 
-      filter(expr(guild_id == ^arg(:guild_id) and intro_channel_id == ^arg(:intro_channel_id)))
+      filter(expr(guild_id == ^arg(:guild_id) and channel_id == ^arg(:channel_id)))
+    end
+
+    update :update_message_id do
+      argument :message_id, :string do
+        allow_nil? false
+      end
+
+      change set_attribute(:message_id, arg(:message_id))
     end
   end
 end
