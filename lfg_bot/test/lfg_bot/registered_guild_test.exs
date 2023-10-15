@@ -72,6 +72,23 @@ defmodule LfgBot.RegisteredGuildChannelTest do
 
     assert("test message id" == found.message_id)
   end
+
+  test "get a reg channel by db id" do
+    {:ok, %{id: id}} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "first guild",
+        channel_id: "first channel"
+      })
+
+    {:ok, _guild_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "second guild",
+        channel_id: "second channel"
+      })
+
+    {:ok, found} = RegisteredGuildChannel.by_id(id)
+    assert found.guild_id == "first guild"
+  end
 end
 
 # More tests ideas:

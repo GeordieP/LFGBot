@@ -36,7 +36,7 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
   code_interface do
     define_for(LfgSystem)
     define(:new, action: :create)
-    define(:read, action: :read)
+    define(:by_id, action: :by_id, args: [:id])
 
     define(:get_by_guild_and_channel,
       action: :get_by_guild_and_channel,
@@ -48,6 +48,15 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
 
   actions do
     defaults([:create, :read, :update, :destroy])
+
+    read :by_id do
+      argument :id, :string do
+        allow_nil? false
+      end
+
+      filter(expr(id == ^arg(:id)))
+      get? true
+    end
 
     read :get_by_guild_and_channel do
       get?(true)

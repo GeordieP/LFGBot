@@ -206,37 +206,27 @@ defmodule LfgBot.Discord.Bot do
       "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
     )
 
+    # TODO: instead of crashing on the match below,
+    #       match on {:ok, %{message_id: message_id}} and then
+    #       ask the API if that message ID can be found.
+    #       if it is found, the channel is already set up and already has a reg message.
+    #       otherwise, we should send a new reg message.
+    #
+    # OLD:
     # # ensure we don't run any of this logic when the channel is found. just crash when a channel is found
-    {:error, %Ash.Error.Query.NotFound{}} =
-      RegisteredGuildChannel.get_by_guild_and_channel(
-        Snowflake.dump(guild_id),
-        Snowflake.dump(channel_id)
-      )
+    # {:error, %Ash.Error.Query.NotFound{}} =
+    #   RegisteredGuildChannel.get_by_guild_and_channel(
+    #     Snowflake.dump(guild_id),
+    #     Snowflake.dump(channel_id)
+    #   )
 
-    {:ok, %RegisteredGuildChannel{}} =
+    # store this guild and channel combo, take the DB-generated ID to
+    # send in the interaction response message
+    {:ok, %RegisteredGuildChannel{id: reg_id}} =
       RegisteredGuildChannel.new(%{
         guild_id: Snowflake.dump(guild_id),
         channel_id: Snowflake.dump(channel_id)
       })
-
-    message_embed =
-      %Embed{}
-      |> Embed.put_title("LFG Bot")
-      # fields for later, once repo is public:
-      # |> Embed.put_author("GP")
-      # |> Embed.put_url("https://github.com/geordiep/lfg_bot")
-      |> Embed.put_color(0xFF6600)
-      |> Embed.put_description(introduction_message())
-
-    # docs:
-    # button options - presumably default discord options: https://discord.com/developers/docs/interactions/message-components#button-object-button-structure
-    action_row =
-      ActionRow.action_row()
-      |> ActionRow.append(
-        Button.interaction_button("New Game", "LFGBOT_START_SESSION",
-          style: Nostrum.Constants.ButtonStyle.success()
-        )
-      )
 
     import Bitwise
     # response docs:
@@ -248,10 +238,7 @@ defmodule LfgBot.Discord.Bot do
       data: %{
         # suppress notifications: flag 1<<12
         flags: 1 <<< 12,
-        components: [action_row],
-        embeds: [
-          message_embed
-        ]
+        content: "LFGREG:" <> reg_id
       }
     }
 
@@ -262,31 +249,29 @@ defmodule LfgBot.Discord.Bot do
   def handle_event(
         {:MESSAGE_CREATE,
          %{
-           guild_id: guild_id,
-           channel_id: channel_id,
-           content: "LFGREG:" <> registered_channel_db_id,
+           content: "LFGREG:" <> reg_chan_id,
            id: message_id,
+           channel_id: channel_id,
            author: %{id: msg_user_id, bot: true}
          } = msg, _ws_state}
       ) do
     with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id"),
          true = msg_user_id == bot_user_id,
-         {:ok, reg_guild} = RegisteredGuildChannel.get_by_guild_and_channel(guild_id, channel_id),
-         {:ok, reg_guild} = add_msg_to_reg_guild(reg_guild, message_id) do
-      :ok
+         {:ok, %RegisteredGuildChannel{} = reg_chan} <-
+           RegisteredGuildChannel.by_id(reg_chan_id),
+         {:ok, %RegisteredGuildChannel{} = _reg_chan} <-
+           RegisteredGuildChannel.update_message_id(reg_chan, Snowflake.dump(message_id)) do
+      Api.edit_message(channel_id, message_id,
+        content: "",
+        embeds: build_registration_msg_embeds(),
+        components: build_registration_msg_components()
+      )
+    else
+      anything ->
+        Logger.error("failed to attach to the registration message")
+        Api.delete_message(channel_id, message_id)
+        IO.inspect(anything)
     end
-  end
-
-  def add_msg_to_reg_guild(reg_guild, message_id) do
-    Ash.Changeset.for_update(reg_guild, :update, %{message_id: message_id})
-    |> LfgSystem.update()
-  end
-
-  # TODO: don't send components with the init message on first send
-  def handle_setup_msg() do
-    # TODO: pull registered channel by id
-    # TODO: update the registered channel with the message id
-    # TODO: upgrade the init message to have components, and erase the init message
   end
 
   def handle_event(_), do: :noop
@@ -382,6 +367,33 @@ defmodule LfgBot.Discord.Bot do
       discriminator: user.discriminator,
       avatar: user.avatar
     }
+  end
+
+  defp build_registration_msg_embeds() do
+    introduction_message_embed =
+      %Embed{}
+      |> Embed.put_title("LFG Bot")
+      # fields for later, once repo is public:
+      # |> Embed.put_author("GP")
+      # |> Embed.put_url("https://github.com/geordiep/lfg_bot")
+      |> Embed.put_color(0xFF6600)
+      |> Embed.put_description(introduction_message())
+
+    [introduction_message_embed]
+  end
+
+  defp build_registration_msg_components() do
+    # docs:
+    # button options - presumably default discord options: https://discord.com/developers/docs/interactions/message-components#button-object-button-structure
+    new_game_component_row =
+      ActionRow.action_row()
+      |> ActionRow.append(
+        Button.interaction_button("New Game", "LFGBOT_START_SESSION",
+          style: Nostrum.Constants.ButtonStyle.success()
+        )
+      )
+
+    [new_game_component_row]
   end
 
   defp introduction_message do
