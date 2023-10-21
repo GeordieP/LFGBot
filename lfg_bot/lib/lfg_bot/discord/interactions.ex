@@ -39,4 +39,61 @@ defmodule LfgBot.Discord.Interactions do
 
     :ok
   end
+
+  def shuffle_teams(%Interaction{} = interaction, invoker_id, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
+
+    DiscordAPI.edit_message(
+      Snowflake.cast!(session.channel_id),
+      Snowflake.cast!(session.message_id),
+      embeds: build_session_msg_embeds(session)
+    )
+
+    DiscordAPI.create_interaction_response(interaction, %{type: 7})
+    :ok
+  end
+
+  # ---
+
+  defp build_session_msg_embeds(%Session{} = session) do
+    alias Nostrum.Struct.Embed
+
+    [team_one, team_two] = session.teams
+
+    player_count = length(team_one["players"]) + length(team_two["players"])
+
+    player_count_label =
+      case player_count do
+        0 -> ""
+        1 -> "(1 player)"
+        _ -> "(#{player_count} players)"
+      end
+
+    name_label =
+      if String.last(session.leader_user_name) == "s" do
+        session.leader_user_name <> "' group " <> player_count_label
+      else
+        session.leader_user_name <> "'s group " <> player_count_label
+      end
+
+    teams_embed =
+      %Embed{}
+      |> Embed.put_title(name_label)
+      |> Embed.put_color(0xFF6600)
+      |> Embed.put_description("Click `Join Game` to join a team!")
+      |> Embed.put_field("TEAM 1", build_team_string(team_one["players"]), true)
+      |> Embed.put_field("TEAM 2", build_team_string(team_two["players"]), true)
+
+    [teams_embed]
+  end
+
+  defp build_team_string([]), do: "*Empty*"
+
+  defp build_team_string(team) when is_list(team),
+    do:
+      Enum.map_join(team, "\n", fn
+        %{"username" => username} -> "- " <> username
+        %{username: username} -> "- " <> username
+      end)
 end

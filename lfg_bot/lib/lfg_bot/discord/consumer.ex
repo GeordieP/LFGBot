@@ -26,7 +26,6 @@ defmodule LfgBot.Discord.Consumer do
   def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
     Logger.debug("[DISCORD EVENT] [READY] installing server commands...")
     :ok = Interactions.install_server_commands(guilds, bot_user_id)
-    Logger.debug("[DISCORD EVENT] [READY] successfully installed server commands")
   end
 
   def handle_event(
@@ -42,14 +41,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [SHUFFLE TEAMS] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok, session} = LfgSystem.get(Session, session_id)
-    {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
-
-    Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-      embeds: build_session_msg_embeds(session)
-    )
-
-    Api.create_interaction_response(interaction, %{type: 7})
+    :ok = Interactions.shuffle_teams(interaction, invoker_id, session_id)
   end
 
   def handle_event(
