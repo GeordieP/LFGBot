@@ -207,10 +207,14 @@ defmodule LfgBot.LfgSystem.Session.Utils do
 
       cond do
         player_from_reserve != nil ->
-          Ash.Changeset.add_error(changeset, "player is already in the reserve list")
+          Ash.Changeset.add_error(
+            changeset,
+            "player is already in the reserve list",
+            :player_reserve
+          )
 
         player_from_team != nil ->
-          Ash.Changeset.add_error(changeset, "player is already in a team")
+          Ash.Changeset.add_error(changeset, "player is already in a team", :player_team)
 
         state == :playing ->
           # a game is in progress, add the new player to the reserve list
