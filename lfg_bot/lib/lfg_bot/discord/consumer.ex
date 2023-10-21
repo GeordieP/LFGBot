@@ -57,13 +57,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [END SESSION] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok, session} = LfgSystem.get(Session, session_id)
-
-    {:ok, %{state: :ended} = session} =
-      Session.terminate_session(session, Snowflake.dump(invoker_id))
-
-    Api.create_interaction_response(interaction, %{type: 6})
-    Api.delete_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id))
+    :ok = Interactions.end_session(interaction, invoker_id, session_id)
   end
 
   def handle_event(

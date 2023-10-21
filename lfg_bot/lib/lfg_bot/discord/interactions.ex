@@ -51,6 +51,23 @@ defmodule LfgBot.Discord.Interactions do
     )
 
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
+
+    :ok
+  end
+
+  def end_session(%Interaction{} = interaction, invoker_id, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+
+    {:ok, %{state: :ended} = session} =
+      Session.terminate_session(session, Snowflake.dump(invoker_id))
+
+    DiscordAPI.delete_message(
+      Snowflake.cast!(session.channel_id),
+      Snowflake.cast!(session.message_id)
+    )
+
+    DiscordAPI.create_interaction_response(interaction, %{type: 6})
+
     :ok
   end
 
