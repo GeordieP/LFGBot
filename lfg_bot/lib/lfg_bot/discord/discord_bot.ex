@@ -183,11 +183,11 @@ defmodule LfgBot.Discord.Bot do
           components: build_session_buttons(session)
         )
 
-      Api.create_interaction_response(interaction, %{type: 5})
+      Api.create_interaction_response(interaction, %{type: 6})
     else
       error ->
         Logger.error("Failed to start session")
-        Api.create_interaction_response(interaction, %{type: 5})
+        Api.create_interaction_response(interaction, %{type: 6})
         Api.delete_message(channel_id, setup_msg_id)
         raise error
     end
