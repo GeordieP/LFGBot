@@ -15,52 +15,18 @@ defmodule LfgBot.Discord.Consumer do
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
 
+  alias LfgBot.Discord.Interactions
+
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-  @command_name "lfginit"
   @bot_ets_table :lfg_bot_table
+  @command_name "lfginit"
+  def command_name, do: @command_name
 
   def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
-    # store bot user ID in ETS for later reference
-    true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
-
-    command = %{
-      name: @command_name,
-      description: "Initialize LFG Bot in the current channel"
-      # options:
-      #   %{
-      #     # reference for type numbers: https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-types
-      #     # more reference for type numbers: https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-type
-      #     type: 3,
-      #     name: "register",
-      #     description:
-      #       "whether or not the bot should use this channel to manage LFG groups and games",
-      #     required: true,
-      #     choices: [
-      #       %{
-      #         name: "Register",
-      #         value: "unregister"
-      #       },
-      #       %{
-      #         name: "Un-Register",
-      #         value: "unregister"
-      #       }
-      #     ]
-      #   }
-      # ]
-    }
-
-    # on startup, delete all existing commands we've previously created, and re-register
-    # this is probably not necessary, but keeps things clean while developing.
-    Enum.each(guilds, fn %{id: guild_id} ->
-      {:ok, commands} = Nostrum.Api.get_guild_application_commands(guild_id)
-
-      Enum.each(commands, fn %{id: command_id} ->
-        Nostrum.Api.delete_guild_application_command(guild_id, command_id)
-      end)
-
-      Nostrum.Api.create_guild_application_command(guild_id, command)
-    end)
+    Logger.debug("[DISCORD EVENT] [READY] installing server commands...")
+    :ok = Interactions.install_server_commands(guilds, bot_user_id)
+    Logger.debug("[DISCORD EVENT] [READY] successfully installed server commands")
   end
 
   def handle_event(
