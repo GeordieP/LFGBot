@@ -37,7 +37,7 @@ defmodule LfgBot.Discord.Interactions do
       DiscordAPI.create_guild_application_command(guild_id, command)
     end)
 
-    :ok
+    {:ok}
   end
 
   def shuffle_teams(%Interaction{} = interaction, invoker_id, session_id) do
@@ -51,8 +51,6 @@ defmodule LfgBot.Discord.Interactions do
     )
 
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
-
-    :ok
   end
 
   def end_session(%Interaction{} = interaction, invoker_id, session_id) do
@@ -67,8 +65,6 @@ defmodule LfgBot.Discord.Interactions do
     )
 
     DiscordAPI.create_interaction_response(interaction, %{type: 6})
-
-    :ok
   end
 
   def player_join(%Interaction{} = interaction, %User{} = user, session_id) do
@@ -104,8 +100,6 @@ defmodule LfgBot.Discord.Interactions do
             DiscordAPI.create_interaction_response(interaction, %{type: 7})
         end
     end
-
-    {:ok}
   end
 
   # ---

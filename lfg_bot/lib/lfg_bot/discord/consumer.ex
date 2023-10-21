@@ -25,7 +25,7 @@ defmodule LfgBot.Discord.Consumer do
 
   def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
     Logger.debug("[DISCORD EVENT] [READY] installing server commands...")
-    :ok = Interactions.install_server_commands(guilds, bot_user_id)
+    {:ok} = Interactions.install_server_commands(guilds, bot_user_id)
   end
 
   def handle_event(
@@ -41,7 +41,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [SHUFFLE TEAMS] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    :ok = Interactions.shuffle_teams(interaction, invoker_id, session_id)
+    {:ok} = Interactions.shuffle_teams(interaction, invoker_id, session_id)
   end
 
   def handle_event(
@@ -57,7 +57,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [END SESSION] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    :ok = Interactions.end_session(interaction, invoker_id, session_id)
+    {:ok} = Interactions.end_session(interaction, invoker_id, session_id)
   end
 
   def handle_event(
