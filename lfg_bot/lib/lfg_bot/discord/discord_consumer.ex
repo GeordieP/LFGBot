@@ -1,4 +1,4 @@
-defmodule LfgBot.Discord.Bot do
+defmodule LfgBot.Discord.Consumer do
   use Nostrum.Consumer
 
   require Logger
