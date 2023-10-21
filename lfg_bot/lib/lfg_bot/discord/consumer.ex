@@ -89,14 +89,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [PLAYER LEAVE] player: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok, session} = LfgSystem.get(Session, session_id)
-    {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
-
-    Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-      embeds: build_session_msg_embeds(session)
-    )
-
-    Api.create_interaction_response(interaction, %{type: 7})
+    {:ok} = Interactions.player_leave(interaction, invoker_id, session_id)
   end
 
   def handle_event(

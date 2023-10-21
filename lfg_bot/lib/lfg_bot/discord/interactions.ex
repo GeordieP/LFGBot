@@ -102,6 +102,19 @@ defmodule LfgBot.Discord.Interactions do
     end
   end
 
+  def player_leave(%Interaction{} = interaction, invoker_id, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
+
+    DiscordAPI.edit_message(
+      Snowflake.cast!(session.channel_id),
+      Snowflake.cast!(session.message_id),
+      embeds: build_session_msg_embeds(session)
+    )
+
+    DiscordAPI.create_interaction_response(interaction, %{type: 7})
+  end
+
   # ---
 
   defp build_session_msg_embeds(%Session{} = session) do
