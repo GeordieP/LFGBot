@@ -73,33 +73,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [PLAYER JOIN] player: #{user.username} #{user.id} | session id: #{session_id}"
     )
 
-    {:ok, session} = LfgSystem.get(Session, session_id)
-
-    case Session.player_join(session, dump_user(user)) do
-      {:ok, session} ->
-        Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-          embeds: build_session_msg_embeds(session)
-        )
-
-        Api.create_interaction_response(interaction, %{type: 7})
-
-      {:error, %Ash.Error.Invalid{errors: errors}} ->
-        case List.first(errors) do
-          %Ash.Error.Changes.InvalidChanges{message: message, path: [:player_team]} ->
-            Api.create_interaction_response(interaction, %{type: 7})
-
-            Logger.debug(
-              "[INVALID] [PLAYER JOIN] #{message} | player: #{user.username} #{user.id} | session id: #{session_id}"
-            )
-
-          %Ash.Error.Changes.InvalidChanges{message: message, path: [:player_reserve]} ->
-            Api.create_interaction_response(interaction, %{type: 7})
-
-            Logger.debug(
-              "[INVALID] [PLAYER JOIN] #{message} | player: #{user.username} #{user.id} | session id: #{session_id}"
-            )
-        end
-    end
+    {:ok} = Interactions.player_join(interaction, user, session_id)
   end
 
   def handle_event(

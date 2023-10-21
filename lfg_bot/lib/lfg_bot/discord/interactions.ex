@@ -71,6 +71,43 @@ defmodule LfgBot.Discord.Interactions do
     :ok
   end
 
+  def player_join(%Interaction{} = interaction, %User{} = user, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+
+    case Session.player_join(session, dump_user(user)) do
+      {:ok, session} ->
+        {:ok, _msg} =
+          DiscordAPI.edit_message(
+            Snowflake.cast!(session.channel_id),
+            Snowflake.cast!(session.message_id),
+            embeds: build_session_msg_embeds(session)
+          )
+
+        DiscordAPI.create_interaction_response(interaction, %{type: 7})
+
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        case List.first(errors) do
+          # player is already on a team
+          %Ash.Error.Changes.InvalidChanges{message: message, path: [:player_team]} ->
+            Logger.debug(
+              "[NOOP] [PLAYER JOIN] #{message} | player: #{user.username} #{user.id} | session id: #{session_id}"
+            )
+
+            DiscordAPI.create_interaction_response(interaction, %{type: 7})
+
+          # player is already in the reserve list
+          %Ash.Error.Changes.InvalidChanges{message: message, path: [:player_reserve]} ->
+            Logger.debug(
+              "[NOOP] [PLAYER JOIN] #{message} | player: #{user.username} #{user.id} | session id: #{session_id}"
+            )
+
+            DiscordAPI.create_interaction_response(interaction, %{type: 7})
+        end
+    end
+
+    {:ok}
+  end
+
   # ---
 
   defp build_session_msg_embeds(%Session{} = session) do
@@ -113,4 +150,29 @@ defmodule LfgBot.Discord.Interactions do
         %{"username" => username} -> "- " <> username
         %{username: username} -> "- " <> username
       end)
+
+  @doc """
+  Dump a Nostrum user struct into a more compact
+  struct compatible with the database.
+  """
+  defp dump_user(%User{} = user) do
+    %{
+      id: Snowflake.dump(user.id),
+      username: user.username,
+      discriminator: user.discriminator,
+      avatar: user.avatar
+    }
+  end
+
+  @doc """
+  Cast a database user into a Nostrum-compatible struct.
+  """
+  defp cast_user(user) do
+    %{
+      id: Snowflake.cast!(user.id),
+      username: user.username,
+      discriminator: user.discriminator,
+      avatar: user.avatar
+    }
+  end
 end
