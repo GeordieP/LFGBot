@@ -103,32 +103,14 @@ defmodule LfgBot.Discord.Consumer do
       ) do
     Logger.debug("[DISCORD EVENT] [START SESSION] leader: #{leader_user_name} #{leader_user_id}")
 
-    {:ok, %{id: setup_msg_id}} =
-      Api.create_message(channel_id, content: "Setting up a new game...")
-
-    with {:ok, session} <-
-           Session.new(%{
-             guild_id: Snowflake.dump(guild_id),
-             channel_id: Snowflake.dump(channel_id),
-             message_id: Snowflake.dump(setup_msg_id),
-             leader_user_id: Snowflake.dump(leader_user_id),
-             leader_user_name: leader_user_name
-           }) do
-      {:ok, _message} =
-        Api.edit_message(channel_id, setup_msg_id,
-          content: "",
-          embeds: build_session_msg_embeds(session),
-          components: build_session_buttons(session)
-        )
-
-      Api.create_interaction_response(interaction, %{type: 6})
-    else
-      error ->
-        Logger.error("Failed to start session")
-        Api.create_interaction_response(interaction, %{type: 6})
-        Api.delete_message(channel_id, setup_msg_id)
-        raise error
-    end
+    {:ok} =
+      Interactions.start_session(
+        interaction,
+        guild_id,
+        channel_id,
+        leader_user_id,
+        leader_user_name
+      )
   end
 
   @doc """

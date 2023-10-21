@@ -53,6 +53,41 @@ defmodule LfgBot.Discord.Interactions do
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
   end
 
+  def start_session(
+        %Interaction{} = interaction,
+        guild_id,
+        channel_id,
+        leader_user_id,
+        leader_user_name
+      ) do
+    {:ok, %{id: setup_msg_id}} =
+      DiscordAPI.create_message(channel_id, content: "Setting up a new game...")
+
+    try do
+      {:ok, session} =
+        Session.new(%{
+          guild_id: Snowflake.dump(guild_id),
+          channel_id: Snowflake.dump(channel_id),
+          message_id: Snowflake.dump(setup_msg_id),
+          leader_user_id: Snowflake.dump(leader_user_id),
+          leader_user_name: leader_user_name
+        })
+
+      {:ok, _message} =
+        DiscordAPI.edit_message(channel_id, setup_msg_id,
+          content: "",
+          embeds: build_session_msg_embeds(session),
+          components: build_session_buttons(session)
+        )
+
+      DiscordAPI.create_interaction_response(interaction, %{type: 6})
+    rescue
+      e ->
+        DiscordAPI.delete_message(channel_id, setup_msg_id)
+        raise e
+    end
+  end
+
   def end_session(%Interaction{} = interaction, invoker_id, session_id) do
     {:ok, session} = LfgSystem.get(Session, session_id)
 
@@ -116,6 +151,40 @@ defmodule LfgBot.Discord.Interactions do
   end
 
   # ---
+
+  defp build_session_buttons(%{id: session_id}) do
+    leader_buttons_row =
+      ActionRow.action_row()
+      |> ActionRow.append(
+        Button.interaction_button("Shuffle Teams", "LFGBOT_SHUFFLE_TEAMS_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.primary(),
+          emoji: %{name: "🔒"}
+        )
+      )
+      |> ActionRow.append(
+        Button.interaction_button("End Session", "LFGBOT_END_SESSION_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.secondary(),
+          emoji: %{name: "🔒"}
+        )
+      )
+
+    user_buttons_row =
+      ActionRow.action_row()
+      |> ActionRow.append(
+        Button.interaction_button("Join Game", "LFGBOT_PLAYER_JOIN_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.success(),
+          emoji: %{name: "🎮"}
+        )
+      )
+      |> ActionRow.append(
+        Button.interaction_button("Leave Game", "LFGBOT_PLAYER_LEAVE_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.secondary(),
+          emoji: %{name: "🚶"}
+        )
+      )
+
+    [leader_buttons_row, user_buttons_row]
+  end
 
   defp build_session_msg_embeds(%Session{} = session) do
     alias Nostrum.Struct.Embed
