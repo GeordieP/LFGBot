@@ -161,7 +161,7 @@ defmodule LfgBot.Discord.Bot do
            guild_id: guild_id,
            user: %{id: leader_user_id, username: leader_user_name},
            data: %ApplicationCommandInteractionData{custom_id: "LFGBOT_START_SESSION"}
-         }, _ws_state}
+         } = interaction, _ws_state}
       ) do
     Logger.debug("[DISCORD EVENT] [START SESSION] leader: #{leader_user_name} #{leader_user_id}")
 
@@ -182,9 +182,12 @@ defmodule LfgBot.Discord.Bot do
           embeds: build_sesson_embeds(session),
           components: build_session_buttons(session)
         )
+
+      Api.create_interaction_response(interaction, %{type: 5})
     else
       error ->
         Logger.error("Failed to start session")
+        Api.create_interaction_response(interaction, %{type: 5})
         Api.delete_message(channel_id, setup_msg_id)
         raise error
     end
