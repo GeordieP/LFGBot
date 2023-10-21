@@ -30,7 +30,7 @@ defmodule LfgBot.LfgSystem.RegisteredGuildChannel do
   end
 
   identities do
-    identity(:unique_server, [:guild_id, :channel_id, :message_id])
+    identity(:unique_server, [:guild_id, :channel_id])
   end
 
   code_interface do
