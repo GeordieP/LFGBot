@@ -80,7 +80,7 @@ defmodule LfgBot.Discord.Bot do
     {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
 
     Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-      embeds: build_sesson_embeds(session)
+      embeds: build_session_msg_embeds(session)
     )
 
     Api.create_interaction_response(interaction, %{type: 7})
@@ -126,7 +126,7 @@ defmodule LfgBot.Discord.Bot do
     case Session.player_join(session, dump_user(user)) do
       {:ok, session} ->
         Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-          embeds: build_sesson_embeds(session)
+          embeds: build_session_msg_embeds(session)
         )
 
         Api.create_interaction_response(interaction, %{type: 7})
@@ -167,7 +167,7 @@ defmodule LfgBot.Discord.Bot do
     {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
 
     Api.edit_message(Snowflake.cast!(session.channel_id), Snowflake.cast!(session.message_id),
-      embeds: build_sesson_embeds(session)
+      embeds: build_session_msg_embeds(session)
     )
 
     Api.create_interaction_response(interaction, %{type: 7})
@@ -198,7 +198,7 @@ defmodule LfgBot.Discord.Bot do
       {:ok, _message} =
         Api.edit_message(channel_id, setup_msg_id,
           content: "",
-          embeds: build_sesson_embeds(session),
+          embeds: build_session_msg_embeds(session),
           components: build_session_buttons(session)
         )
 
@@ -344,16 +344,25 @@ defmodule LfgBot.Discord.Bot do
     [leader_buttons_row, user_buttons_row]
   end
 
-  defp build_sesson_embeds(%Session{} = session) do
+  defp build_session_msg_embeds(%Session{} = session) do
     alias Nostrum.Struct.Embed
 
     [team_one, team_two] = session.teams
 
+    player_count = length(team_one["players"]) + length(team_two["players"])
+
+    player_count_label =
+      case player_count do
+        0 -> ""
+        1 -> "(1 player)"
+        _ -> "(#{player_count} players)"
+      end
+
     name_label =
       if String.last(session.leader_user_name) == "s" do
-        session.leader_user_name <> "' group"
+        session.leader_user_name <> "' group " <> player_count_label
       else
-        session.leader_user_name <> "'s group"
+        session.leader_user_name <> "'s group " <> player_count_label
       end
 
     teams_embed =
