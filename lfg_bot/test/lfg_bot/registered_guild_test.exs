@@ -109,12 +109,3 @@ defmodule LfgBot.RegisteredGuildChannelTest do
     assert message =~ "taken"
   end
 end
-
-# More tests ideas:
-#
-# - since the :unique_server identity consists of [:guild_id, :channel_id, :message_id],
-#   what happens when two channels in the same guild are registered, but neither successfully set the message id?
-#   i.e. test: register two channel ids with the same guild id, and nil message id. match expected result.
-#
-# - test: ensure the identity works. register two different channels with the same guild id,
-#   and then try to register one of them again. should return error.
