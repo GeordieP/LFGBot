@@ -113,9 +113,6 @@ defmodule LfgBot.Discord.Consumer do
       )
   end
 
-  @doc """
-  Handle the register channel event
-  """
   def handle_event(
         {:INTERACTION_CREATE,
          %Interaction{
@@ -129,54 +126,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
     )
 
-    import Bitwise
-
-    with {:ok, %{message_id: message_id}} <-
-           RegisteredGuildChannel.get_by_guild_and_channel(
-             Snowflake.dump(guild_id),
-             Snowflake.dump(channel_id)
-           ),
-         {:ok, %Message{} = message} <-
-           Api.get_channel_message(channel_id, Snowflake.cast!(message_id)) do
-      # channel already has a reg message
-      response = %{
-        type: 4,
-        data: %{
-          # ephemeral: flag 1<<6
-          flags: 1 <<< 6,
-          content:
-            "This channel is already registered! To re-register, a moderator will need to delete this message: #{Message.to_url(message)}"
-        }
-      }
-
-      Api.create_interaction_response(interaction, response)
-    else
-      {:error, _error} ->
-        # channel is not registered
-
-        # store this guild and channel combo, take the DB-generated ID to
-        # send in the interaction response message
-        {:ok, %RegisteredGuildChannel{id: reg_id}} =
-          RegisteredGuildChannel.new(%{
-            guild_id: Snowflake.dump(guild_id),
-            channel_id: Snowflake.dump(channel_id)
-          })
-
-        # response docs:
-        # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
-        # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
-        # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
-        response = %{
-          type: 4,
-          data: %{
-            # suppress notifications: flag 1<<12
-            flags: 1 <<< 12,
-            content: "LFGREG:" <> reg_id
-          }
-        }
-
-        Api.create_interaction_response(interaction, response)
-    end
+    {:ok} = Interactions.register_channel(interaction, guild_id, channel_id)
   end
 
   def handle_event(

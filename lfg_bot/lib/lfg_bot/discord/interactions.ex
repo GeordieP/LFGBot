@@ -1,5 +1,7 @@
 defmodule LfgBot.Discord.Interactions do
   require Logger
+  import Bitwise
+
   alias Nostrum.Api, as: DiscordAPI
   alias LfgBot.LfgSystem
   alias LfgBot.Discord.Consumer
@@ -15,6 +17,11 @@ defmodule LfgBot.Discord.Interactions do
   alias Nostrum.Struct.Embed
 
   @bot_ets_table :lfg_bot_table
+
+  # Interaction response docs:
+  # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
+  # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
+  # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
 
   def install_server_commands(guilds, bot_user_id) do
     # store bot user ID in ETS for later reference
@@ -53,6 +60,88 @@ defmodule LfgBot.Discord.Interactions do
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
   end
 
+  def register_channel(%Interaction{} = interaction, guild_id, channel_id) do
+    maybe_register_channel(
+      check_is_channel_registered(guild_id, channel_id),
+      interaction,
+      guild_id,
+      channel_id
+    )
+  end
+
+  defp check_is_channel_registered(guild_id, channel_id) do
+    case RegisteredGuildChannel.get_by_guild_and_channel(
+           Snowflake.dump(guild_id),
+           Snowflake.dump(channel_id)
+         ) do
+      {:ok, %{id: reg_id, message_id: message_id}} ->
+        # guild & channel combination was found in the database! ask discord API if the message can still be accessed
+        case DiscordAPI.get_channel_message(channel_id, Snowflake.cast!(message_id)) do
+          {:ok, %Message{} = message} ->
+            # guild & channel combination exists in the database, and the message is still accessible
+            {:registered, message}
+
+          {:error, %{status_code: 404}} ->
+            # guild & channel combination exists in the database, but the message is no longer accessible;
+            {:disconnected, reg_id}
+        end
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        # guild & channel combination was not found in the database
+        {:unregistered}
+    end
+  end
+
+  defp maybe_register_channel({:registered, %Message{} = message}, interaction, _, _) do
+    DiscordAPI.create_interaction_response(interaction, %{
+      type: 4,
+      data: %{
+        # ephemeral: flag 1<<6
+        flags: 1 <<< 6,
+        content:
+          "This channel is already registered! To re-register, a moderator will need to delete this message: #{Message.to_url(message)}"
+      }
+    })
+  end
+
+  defp maybe_register_channel({:disconnected, reg_id}, interaction, _, _) do
+    send_registration_response(interaction, reg_id)
+  end
+
+  defp maybe_register_channel({:unregistered}, interaction, guild_id, channel_id) do
+    case RegisteredGuildChannel.new(%{
+           guild_id: Snowflake.dump(guild_id),
+           channel_id: Snowflake.dump(channel_id)
+         }) do
+      {:ok, %RegisteredGuildChannel{id: reg_id}} ->
+        send_registration_response(interaction, reg_id)
+
+      {:error, error} ->
+        DiscordAPI.create_interaction_response(interaction, %{
+          type: 4,
+          data: %{
+            # ephemeral: flag 1<<6
+            flags: 1 <<< 6,
+            content:
+              "Failed to register! Something went wrong when saving the RegisteredGuildChannel to the database"
+          }
+        })
+
+        raise error
+    end
+  end
+
+  defp send_registration_response(%Interaction{} = interaction, reg_id) do
+    DiscordAPI.create_interaction_response(interaction, %{
+      type: 4,
+      data: %{
+        # suppress notifications: flag 1<<12
+        flags: 1 <<< 12,
+        content: "LFGREG:" <> reg_id
+      }
+    })
+  end
+
   def start_session(
         %Interaction{} = interaction,
         guild_id,
@@ -84,7 +173,7 @@ defmodule LfgBot.Discord.Interactions do
     rescue
       e ->
         DiscordAPI.delete_message(channel_id, setup_msg_id)
-        raise e
+        reraise e, __STACKTRACE__
     end
   end
 
