@@ -3,17 +3,12 @@ defmodule LfgBot.Discord.InteractionHandlers do
   import Bitwise
 
   alias Nostrum.Api, as: DiscordAPI
-  alias LfgBot.LfgSystem
   alias LfgBot.Discord.Consumer
-  alias LfgBot.LfgSystem.Session
-  alias LfgBot.LfgSystem.RegisteredGuildChannel
-  alias Nostrum.Struct.Interaction
-  alias Nostrum.Struct.User
+  alias LfgBot.LfgSystem
+  alias LfgBot.LfgSystem.{Session, RegisteredGuildChannel}
+  alias Nostrum.Struct.{Interaction, User, Message, Embed}
+  alias Nostrum.Struct.Component.{ActionRow, Button}
   alias Nostrum.Snowflake
-  alias Nostrum.Struct.Message
-  alias Nostrum.Struct.Component.ActionRow
-  alias Nostrum.Struct.Component.Button
-  alias Nostrum.Struct.Embed
 
   # Interaction response docs:
   # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
@@ -42,19 +37,6 @@ defmodule LfgBot.Discord.InteractionHandlers do
     end)
 
     {:ok}
-  end
-
-  def shuffle_teams(%Interaction{} = interaction, invoker_id, session_id) do
-    {:ok, session} = LfgSystem.get(Session, session_id)
-    {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
-
-    DiscordAPI.edit_message(
-      Snowflake.cast!(session.channel_id),
-      Snowflake.cast!(session.message_id),
-      embeds: build_session_msg_embeds(session)
-    )
-
-    DiscordAPI.create_interaction_response(interaction, %{type: 7})
   end
 
   def register_channel(%Interaction{} = interaction, guild_id, channel_id) do
@@ -226,6 +208,19 @@ defmodule LfgBot.Discord.InteractionHandlers do
   def player_leave(%Interaction{} = interaction, invoker_id, session_id) do
     {:ok, session} = LfgSystem.get(Session, session_id)
     {:ok, session} = Session.player_leave(session, Snowflake.dump(invoker_id))
+
+    DiscordAPI.edit_message(
+      Snowflake.cast!(session.channel_id),
+      Snowflake.cast!(session.message_id),
+      embeds: build_session_msg_embeds(session)
+    )
+
+    DiscordAPI.create_interaction_response(interaction, %{type: 7})
+  end
+
+  def shuffle_teams(%Interaction{} = interaction, invoker_id, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.shuffle_teams(session, Snowflake.dump(invoker_id))
 
     DiscordAPI.edit_message(
       Snowflake.cast!(session.channel_id),
