@@ -7,6 +7,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
   alias LfgBot.LfgSystem
   alias LfgBot.LfgSystem.{Session, RegisteredGuildChannel}
   alias Nostrum.Struct.{Interaction, User, Message, Embed}
+  alias Nostrum.Struct.Component.TextInput
   alias Nostrum.Struct.Component.{ActionRow, Button}
   alias Nostrum.Snowflake
 
@@ -231,6 +232,26 @@ defmodule LfgBot.Discord.InteractionHandlers do
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
   end
 
+  def open_test_modal(%Interaction{} = interaction, _invoker_id, session_id) do
+    # TODO: we'll need to use component type 7 (mentionable select) for choosing people: https://discord.com/developers/docs/interactions/message-components#component-object-component-types
+    modal_components =
+      ActionRow.action_row([
+        TextInput.text_input("Testing", "MY_TEST_TEXT_INPUT",
+          label: "test label",
+          style: 1,
+          placeholder: "Hi this is a test input"
+        )
+      ])
+
+    DiscordAPI.create_interaction_response(interaction, %{
+      type: 9,
+      data: %{
+        content: "",
+        components: [modal_components]
+      }
+    })
+  end
+
   # ---
 
   defp build_session_buttons(%{id: session_id}) do
@@ -244,6 +265,14 @@ defmodule LfgBot.Discord.InteractionHandlers do
       )
       |> ActionRow.append(
         Button.interaction_button("End Session", "LFGBOT_END_SESSION_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.secondary(),
+          emoji: %{name: "🔒"}
+        )
+      )
+      |> ActionRow.append(
+        Button.interaction_button(
+          "Modals Test",
+          "LFGBOT_TESTING_TESTING_TESTING_TESTING" <> session_id,
           style: Nostrum.Constants.ButtonStyle.secondary(),
           emoji: %{name: "🔒"}
         )
