@@ -120,6 +120,22 @@ defmodule LfgBot.Discord.Consumer do
     {:ok} = InteractionHandlers.shuffle_teams(interaction, invoker_id, session_id)
   end
 
+  def handle_event(
+        {:INTERACTION_CREATE,
+         %Interaction{
+           user: %{id: invoker_id, username: invoker_username},
+           data: %ApplicationCommandInteractionData{
+             custom_id: "LFGBOT_TESTING_TESTING_TESTING_TESTING" <> session_id
+           }
+         } = interaction, _ws_state}
+      ) do
+    Logger.debug(
+      "[DISCORD EVENT] [TEST TEST TEST MODAL] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
+    {:ok} = InteractionHandlers.open_test_modal(interaction, invoker_id, session_id)
+  end
+
   ## Message Handlers
   ## ----------------
 
