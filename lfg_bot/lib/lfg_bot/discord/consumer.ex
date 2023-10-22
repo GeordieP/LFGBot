@@ -1,25 +1,13 @@
 defmodule LfgBot.Discord.Consumer do
   use Nostrum.Consumer
-
   require Logger
-  alias LfgBot.LfgSystem
-  alias LfgBot.LfgSystem.Session
-  alias LfgBot.LfgSystem.RegisteredGuildChannel
-  alias Nostrum.Api
   alias Nostrum.Struct.Interaction
   alias Nostrum.Struct.ApplicationCommandInteractionData
-  alias Nostrum.Struct.User
-  alias Nostrum.Snowflake
-  alias Nostrum.Struct.Message
-  alias Nostrum.Struct.Component.ActionRow
-  alias Nostrum.Struct.Component.Button
-  alias Nostrum.Struct.Embed
   alias LfgBot.Discord.InteractionHandlers
   alias LfgBot.Discord.MessageHandlers
 
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-  @bot_ets_table :lfg_bot_table
   @command_name "lfginit"
   def command_name, do: @command_name
 

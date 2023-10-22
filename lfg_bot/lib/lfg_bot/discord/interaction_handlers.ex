@@ -8,15 +8,12 @@ defmodule LfgBot.Discord.InteractionHandlers do
   alias LfgBot.LfgSystem.Session
   alias LfgBot.LfgSystem.RegisteredGuildChannel
   alias Nostrum.Struct.Interaction
-  alias Nostrum.Struct.ApplicationCommandInteractionData
   alias Nostrum.Struct.User
   alias Nostrum.Snowflake
   alias Nostrum.Struct.Message
   alias Nostrum.Struct.Component.ActionRow
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
-
-  @bot_ets_table :lfg_bot_table
 
   # Interaction response docs:
   # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
@@ -25,7 +22,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
 
   def install_server_commands(guilds, bot_user_id) do
     # store bot user ID in ETS for later reference
-    true = :ets.insert(@bot_ets_table, {"bot_user_id", bot_user_id})
+    true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
 
     command = %{
       name: Consumer.command_name(),
@@ -316,25 +313,11 @@ defmodule LfgBot.Discord.InteractionHandlers do
         %{username: username} -> "- " <> username
       end)
 
-  @doc """
-  Dump a Nostrum user struct into a more compact
-  struct compatible with the database.
-  """
+  # Dump a Nostrum user struct into a more compact
+  # struct compatible with the database.
   defp dump_user(%User{} = user) do
     %{
       id: Snowflake.dump(user.id),
-      username: user.username,
-      discriminator: user.discriminator,
-      avatar: user.avatar
-    }
-  end
-
-  @doc """
-  Cast a database user into a Nostrum-compatible struct.
-  """
-  defp cast_user(user) do
-    %{
-      id: Snowflake.cast!(user.id),
       username: user.username,
       discriminator: user.discriminator,
       avatar: user.avatar
