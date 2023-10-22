@@ -15,17 +15,15 @@ defmodule LfgBot.Discord.Consumer do
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
 
-  alias LfgBot.Discord.Interactions
-
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-  @bot_ets_table :lfg_bot_table
+  alias LfgBot.Discord.InteractionHandlers.@(bot_ets_table(:lfg_bot_table))
   @command_name "lfginit"
   def command_name, do: @command_name
 
   def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
     Logger.debug("[DISCORD EVENT] [READY] installing server commands...")
-    {:ok} = Interactions.install_server_commands(guilds, bot_user_id)
+    {:ok} = InteractionHandlers.install_server_commands(guilds, bot_user_id)
   end
 
   def handle_event(
@@ -41,7 +39,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [SHUFFLE TEAMS] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok} = Interactions.shuffle_teams(interaction, invoker_id, session_id)
+    {:ok} = InteractionHandlers.shuffle_teams(interaction, invoker_id, session_id)
   end
 
   def handle_event(
@@ -57,7 +55,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [END SESSION] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok} = Interactions.end_session(interaction, invoker_id, session_id)
+    {:ok} = InteractionHandlers.end_session(interaction, invoker_id, session_id)
   end
 
   def handle_event(
@@ -73,7 +71,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [PLAYER JOIN] player: #{user.username} #{user.id} | session id: #{session_id}"
     )
 
-    {:ok} = Interactions.player_join(interaction, user, session_id)
+    {:ok} = InteractionHandlers.player_join(interaction, user, session_id)
   end
 
   def handle_event(
@@ -89,7 +87,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [PLAYER LEAVE] player: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok} = Interactions.player_leave(interaction, invoker_id, session_id)
+    {:ok} = InteractionHandlers.player_leave(interaction, invoker_id, session_id)
   end
 
   def handle_event(
@@ -104,7 +102,7 @@ defmodule LfgBot.Discord.Consumer do
     Logger.debug("[DISCORD EVENT] [START SESSION] leader: #{leader_user_name} #{leader_user_id}")
 
     {:ok} =
-      Interactions.start_session(
+      InteractionHandlers.start_session(
         interaction,
         guild_id,
         channel_id,
@@ -126,7 +124,7 @@ defmodule LfgBot.Discord.Consumer do
       "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
     )
 
-    {:ok} = Interactions.register_channel(interaction, guild_id, channel_id)
+    {:ok} = InteractionHandlers.register_channel(interaction, guild_id, channel_id)
   end
 
   def handle_event(

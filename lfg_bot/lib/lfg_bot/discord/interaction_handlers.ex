@@ -1,4 +1,4 @@
-defmodule LfgBot.Discord.Interactions do
+defmodule LfgBot.Discord.InteractionHandlers do
   require Logger
   import Bitwise
 
