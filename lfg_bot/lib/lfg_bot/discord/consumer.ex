@@ -14,10 +14,12 @@ defmodule LfgBot.Discord.Consumer do
   alias Nostrum.Struct.Component.ActionRow
   alias Nostrum.Struct.Component.Button
   alias Nostrum.Struct.Embed
+  alias LfgBot.Discord.InteractionHandlers
+  alias LfgBot.Discord.MessageHandlers
 
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-  alias LfgBot.Discord.InteractionHandlers.@(bot_ets_table(:lfg_bot_table))
+  @bot_ets_table :lfg_bot_table
   @command_name "lfginit"
   def command_name, do: @command_name
 
@@ -130,28 +132,16 @@ defmodule LfgBot.Discord.Consumer do
   def handle_event(
         {:MESSAGE_CREATE,
          %{
-           content: "LFGREG:" <> reg_chan_id,
+           content: "LFGREG:" <> reg_id,
            id: message_id,
            channel_id: channel_id,
-           author: %{id: msg_user_id, bot: true}
+           author: %{id: author_id, bot: true}
          }, _ws_state}
       ) do
-    with [{"bot_user_id", bot_user_id}] <- :ets.lookup(:lfg_bot_table, "bot_user_id"),
-         true = msg_user_id == bot_user_id,
-         {:ok, %RegisteredGuildChannel{} = reg_chan} <-
-           RegisteredGuildChannel.by_id(reg_chan_id),
-         {:ok, %RegisteredGuildChannel{} = _reg_chan} <-
-           RegisteredGuildChannel.update_message_id(reg_chan, Snowflake.dump(message_id)) do
-      Api.edit_message(channel_id, message_id,
-        content: "",
-        embeds: build_registration_msg_embeds(),
-        components: build_registration_msg_components()
-      )
-    else
-      error ->
-        Logger.error("failed to attach to the registration message")
-        Api.delete_message(channel_id, message_id)
-        raise error
+    [{"bot_user_id", bot_user_id}] = :ets.lookup(:lfg_bot_table, "bot_user_id")
+
+    if author_id == bot_user_id do
+      {:ok} = MessageHandlers.registration_message(reg_id, channel_id, message_id)
     end
   end
 
