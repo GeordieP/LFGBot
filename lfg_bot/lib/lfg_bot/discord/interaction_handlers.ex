@@ -3,17 +3,12 @@ defmodule LfgBot.Discord.InteractionHandlers do
   import Bitwise
 
   alias Nostrum.Api, as: DiscordAPI
-  alias LfgBot.LfgSystem
   alias LfgBot.Discord.Consumer
-  alias LfgBot.LfgSystem.Session
-  alias LfgBot.LfgSystem.RegisteredGuildChannel
-  alias Nostrum.Struct.Interaction
-  alias Nostrum.Struct.User
+  alias LfgBot.LfgSystem
+  alias LfgBot.LfgSystem.{Session, RegisteredGuildChannel}
+  alias Nostrum.Struct.{Interaction, User, Message, Embed}
+  alias Nostrum.Struct.Component.{ActionRow, Button}
   alias Nostrum.Snowflake
-  alias Nostrum.Struct.Message
-  alias Nostrum.Struct.Component.ActionRow
-  alias Nostrum.Struct.Component.Button
-  alias Nostrum.Struct.Embed
 
   # Interaction response docs:
   # type: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type

@@ -1,13 +1,13 @@
 defmodule LfgBot.Discord.Consumer do
   use Nostrum.Consumer
   require Logger
-  alias Nostrum.Struct.Interaction
-  alias Nostrum.Struct.ApplicationCommandInteractionData
-  alias LfgBot.Discord.InteractionHandlers
-  alias LfgBot.Discord.MessageHandlers
+  alias Nostrum.Struct.{ApplicationCommandInteractionData, Interaction}
+  alias LfgBot.Discord.{InteractionHandlers, MessageHandlers}
 
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
+
+  # @command_name defined as a module attribute so it can be matched on
   @command_name "lfginit"
   def command_name, do: @command_name
 
