@@ -89,6 +89,25 @@ defmodule LfgBot.RegisteredGuildChannelTest do
     {:ok, found} = RegisteredGuildChannel.by_id(id)
     assert found.guild_id == "first guild"
   end
+
+  test "disallows registering the same channel more than once" do
+    {:ok, _guild_channel} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "first guild",
+        channel_id: "first channel"
+      })
+
+    {:error, %Ash.Error.Invalid{errors: errors}} =
+      RegisteredGuildChannel.new(%{
+        guild_id: "first guild",
+        channel_id: "first channel"
+      })
+
+    assert %Ash.Error.Changes.InvalidAttribute{field: :guild_id, message: message} =
+             List.first(errors)
+
+    assert message =~ "taken"
+  end
 end
 
 # More tests ideas:
