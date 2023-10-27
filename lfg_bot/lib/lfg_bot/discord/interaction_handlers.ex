@@ -78,7 +78,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
         # ephemeral: flag 1<<6
         flags: 1 <<< 6,
         content:
-          "This channel is already registered! To re-register, a moderator will need to delete this message: #{Message.to_url(message)}"
+          "This channel has already been registered. To re-register, a moderator will need to delete this message: #{Message.to_url(message)}"
       }
     })
   end
