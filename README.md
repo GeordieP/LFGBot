@@ -24,7 +24,13 @@ Teams are shown in the bot's message, and can be shuffled by the group leader.
 
 ## Dev & Contributing
 
-Open for contributions! The bot is written in [elixir](https://elixir-lang.org) and uses the [Nostrum](https://github.com/Kraigie/nostrum) library to interact with Discord.
+Project is open for contributions!
+
+The bot is written in [elixir](https://elixir-lang.org) and uses the [Nostrum](https://github.com/Kraigie/nostrum) library to interact with Discord.
+
+The core data layer is using the [Ash](https://github.com/ash-project/ash) framework and is backed by a [PostgreSQL](https://www.postgresql.org) database (definitely overkill, but the official Ash SQLite integration wasn't available yet!).
+
+The production instance is deployed on [Fly.io](https://fly.io).
 
 <details>
   <summary>
@@ -34,7 +40,7 @@ Open for contributions! The bot is written in [elixir](https://elixir-lang.org) 
 - Elixir
   - [https://elixir-lang.org](https://elixir-lang.org)
   - I'm using version 1.15 with Erlang/OTP 26
-- A Postgres database
+- A PostgreSQL database
   - [https://www.postgresql.org](https://www.postgresql.org)
   - If you have docker, there's a `docker-compose` file in this repository which will run a dev database for you. Find it at [lfg_bot_pgsql/docker-compose.yml](lfg_bot_pgsql/docker-compose.yml)
 - A Discord developer app for testing your changes locally
@@ -55,3 +61,19 @@ Open for contributions! The bot is written in [elixir](https://elixir-lang.org) 
 Unless I've missed something, after all this, you should be able to run the elixir application and interact with the bot in your testing server.
 
 </details>
+
+#### Repo Points of Interest
+
+- [lib/lfg_bot/discord/consumer.ex](lfg_bot/lib/lfg_bot/discord/consumer.ex)
+  - The module that listens for Discord events and sends them over to domain-specific handler functions
+- [lib/lfg_bot/discord/interaction_handlers.ex](lfg_bot/lib/lfg_bot/discord/interaction_handlers.ex)
+  - Handlers for [Discord Interactions](https://discord.com/developers/docs/interactions) (button clicks etc)
+- [lib/lfg_bot/discord/message_handlers.ex](lfg_bot/lib/lfg_bot/discord/message_handlers.ex)
+  - Handlers for Discord messages.
+  <!-- TODO: write a section on the weird channel registration flow driven by a message handler -->
+- [lib/lfg_bot/lfg_system/resources/registered_guild_channel.ex](lfg_bot/lib/lfg_bot/lfg_system/resources/registered_guild_channel.ex)
+  - `RegisteredGuildChannel` database model
+  - Represents a Discord server & channel wherein the bot can be controlled
+- [lib/lfg_bot/lfg_system/resources/session.ex](lfg_bot/lib/lfg_bot/lfg_system/resources/session.ex)
+  - `Session` database model
+  - Represents a group/session and stores the team player lists
