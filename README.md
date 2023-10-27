@@ -67,9 +67,9 @@ Unless I've missed something, after all this, you should be able to run the elix
 - [lib/lfg_bot/discord/consumer.ex](lfg_bot/lib/lfg_bot/discord/consumer.ex)
   - The module that listens for Discord events and sends them over to domain-specific handler functions
 - [lib/lfg_bot/discord/interaction_handlers.ex](lfg_bot/lib/lfg_bot/discord/interaction_handlers.ex)
-  - Handlers for [Discord Interactions](https://discord.com/developers/docs/interactions) (button clicks etc)
+  - Handlers for [Discord Interactions](https://discord.com/developers/docs/interactions/receiving-and-responding#interactions) (button clicks etc)
 - [lib/lfg_bot/discord/message_handlers.ex](lfg_bot/lib/lfg_bot/discord/message_handlers.ex)
-  - Handlers for Discord messages.
+  - Handlers for Discord messages
   <!-- TODO: write a section on the weird channel registration flow driven by a message handler -->
 - [lib/lfg_bot/lfg_system/resources/registered_guild_channel.ex](lfg_bot/lib/lfg_bot/lfg_system/resources/registered_guild_channel.ex)
   - `RegisteredGuildChannel` database model
