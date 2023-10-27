@@ -129,7 +129,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
         leader_user_name
       ) do
     {:ok, %{id: setup_msg_id}} =
-      DiscordAPI.create_message(channel_id, content: "Setting up a new game...")
+      DiscordAPI.create_message(channel_id, content: "Setting up a new group...")
 
     try do
       {:ok, session} =
@@ -252,13 +252,13 @@ defmodule LfgBot.Discord.InteractionHandlers do
     user_buttons_row =
       ActionRow.action_row()
       |> ActionRow.append(
-        Button.interaction_button("Join Game", "LFGBOT_PLAYER_JOIN_" <> session_id,
+        Button.interaction_button("Join Group", "LFGBOT_PLAYER_JOIN_" <> session_id,
           style: Nostrum.Constants.ButtonStyle.success(),
           emoji: %{name: "🎮"}
         )
       )
       |> ActionRow.append(
-        Button.interaction_button("Leave Game", "LFGBOT_PLAYER_LEAVE_" <> session_id,
+        Button.interaction_button("Leave Group", "LFGBOT_PLAYER_LEAVE_" <> session_id,
           style: Nostrum.Constants.ButtonStyle.secondary(),
           emoji: %{name: "🚶"}
         )
@@ -268,8 +268,6 @@ defmodule LfgBot.Discord.InteractionHandlers do
   end
 
   defp build_session_msg_embeds(%Session{} = session) do
-    alias Nostrum.Struct.Embed
-
     [team_one, team_two] = session.teams
 
     player_count = length(team_one["players"]) + length(team_two["players"])
@@ -281,19 +279,16 @@ defmodule LfgBot.Discord.InteractionHandlers do
         _ -> "(#{player_count} players)"
       end
 
-    name_label =
-      if String.last(session.leader_user_name) == "s" do
-        session.leader_user_name <> "' group " <> player_count_label
-      else
-        session.leader_user_name <> "'s group " <> player_count_label
-      end
+    name_label = tag_user(session.leader_user_id) <> "'s group " <> player_count_label
+    description = "**#{name_label}**\n\nClick `🎮 Join Group` below to join a team!"
 
     teams_embed =
       %Embed{}
-      |> Embed.put_title(name_label)
       |> Embed.put_color(0xFF6600)
-      |> Embed.put_description("Click `Join Game` to join a team!")
+      |> Embed.put_description(description)
       |> Embed.put_field("TEAM 1", build_team_string(team_one["players"]), true)
+      # use an empty field to add some space between teams; makes the lists a bit more readable
+      |> Embed.put_field("", "", true)
       |> Embed.put_field("TEAM 2", build_team_string(team_two["players"]), true)
 
     [teams_embed]
@@ -304,8 +299,8 @@ defmodule LfgBot.Discord.InteractionHandlers do
   defp build_team_string(team) when is_list(team),
     do:
       Enum.map_join(team, "\n", fn
-        %{"username" => username} -> "- " <> username
-        %{username: username} -> "- " <> username
+        %{"username" => username, "id" => id} -> "- " <> tag_user(id)
+        %{username: username, id: id} -> "- " <> tag_user(id)
       end)
 
   # Dump a Nostrum user struct into a more compact
@@ -318,4 +313,6 @@ defmodule LfgBot.Discord.InteractionHandlers do
       avatar: user.avatar
     }
   end
+
+  defp tag_user(user_id) when is_binary(user_id), do: "<@#{user_id}>"
 end

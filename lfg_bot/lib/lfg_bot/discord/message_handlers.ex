@@ -38,10 +38,11 @@ defmodule LfgBot.Discord.MessageHandlers do
   defp build_registration_msg_embeds() do
     introduction_message_embed =
       %Embed{}
-      |> Embed.put_title("LFG Bot")
-      # fields for later, once repo is public:
-      # |> Embed.put_author("GP")
-      # |> Embed.put_url("https://github.com/geordiep/lfg_bot")
+      |> Embed.put_author(
+        "LFG Bot",
+        "https://github.com/geordiep/LFGBot",
+        "https://cdn.discordapp.com/app-icons/1160972219061645312/71ce8a6c1ccac060cfb32ed81d4b66ed.png"
+      )
       |> Embed.put_color(0xFF6600)
       |> Embed.put_description(build_introduction_msg())
 
@@ -54,7 +55,7 @@ defmodule LfgBot.Discord.MessageHandlers do
     new_game_component_row =
       ActionRow.action_row()
       |> ActionRow.append(
-        Button.interaction_button("New Game", "LFGBOT_START_SESSION",
+        Button.interaction_button("New Group", "LFGBOT_START_SESSION",
           style: Nostrum.Constants.ButtonStyle.success()
         )
       )
@@ -64,13 +65,13 @@ defmodule LfgBot.Discord.MessageHandlers do
 
   defp build_introduction_msg do
     """
-    A Discord bot for inhouse games
-    *by <@84203400920563712>*
+    *A Discord bot for inhouse games*
 
-    **Click 'New Game' below to start a group!**
-    The bot will send a message in this channel with buttons to join/leave the group, shuffle teams, and end the session.
+    **Click `New Group` below to start a session!**
 
-    Buttons with the 🔒 emoji can only be used by the group creator.
+    The bot will send a message with buttons to join/leave the group, shuffle teams, and end the session.
+
+    `🔒 Locked` buttons can only be used by the group creator.
 
     Have fun!
     """
