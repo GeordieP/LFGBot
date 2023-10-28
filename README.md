@@ -26,7 +26,7 @@ Teams are shown in the bot's message, and can be shuffled by the group leader.
 
 Project is open for contributions!
 
-The bot is written in [elixir](https://elixir-lang.org) and uses the [Nostrum](https://github.com/Kraigie/nostrum) library to interact with Discord.
+The bot is written in [Elixir](https://elixir-lang.org) and uses the [Nostrum](https://github.com/Kraigie/nostrum) library to interact with Discord.
 
 The core data layer is using the [Ash](https://github.com/ash-project/ash) framework and is backed by a [PostgreSQL](https://www.postgresql.org) database (definitely overkill, but the official Ash SQLite integration wasn't available yet!).
 
@@ -53,7 +53,7 @@ The production instance is deployed on [Fly.io](https://fly.io).
 - A Discord server for testing your changes
   - It's recommended to use a personal server for this, just in case
   - Once you've made an app in the Discord developer portal (see section above), you can add that bot to your server by:
-    - Getting your client ID from `OAuth2` section
+    - Getting your client ID from the `OAuth2` section
     - Substituting your client ID in this URL: `https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID_HERE>&permissions=53687158848&scope=bot`
       - (Permissions code last updated Oct 26 2023 // [permissions calculator](https://discordapi.com/permissions.html#53687158848))
     - Opening that URL in your browser
