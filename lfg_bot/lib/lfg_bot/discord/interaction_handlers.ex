@@ -234,19 +234,25 @@ defmodule LfgBot.Discord.InteractionHandlers do
 
   def open_test_modal(%Interaction{} = interaction, _invoker_id, session_id) do
     # TODO: we'll need to use component type 7 (mentionable select) for choosing people: https://discord.com/developers/docs/interactions/message-components#component-object-component-types
+
+    text_input_component =
+      TextInput.text_input("Testing", "MY_TEST_TEXT_INPUT",
+        placeholder: "Hi this is a test input",
+        style: 1,
+        min_length: 1,
+        max_length: 100,
+        required: false
+      )
+
     modal_components =
-      ActionRow.action_row([
-        TextInput.text_input("Testing", "MY_TEST_TEXT_INPUT",
-          label: "test label",
-          style: 1,
-          placeholder: "Hi this is a test input"
-        )
-      ])
+      ActionRow.action_row(components: [text_input_component])
 
     DiscordAPI.create_interaction_response(interaction, %{
+      # type 9 = MODAL https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
       type: 9,
       data: %{
-        content: "",
+        title: "testing modal",
+        custom_id: "testing_modal_" <> session_id,
         components: [modal_components]
       }
     })
