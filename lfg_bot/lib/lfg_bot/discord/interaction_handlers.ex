@@ -231,6 +231,56 @@ defmodule LfgBot.Discord.InteractionHandlers do
     DiscordAPI.create_interaction_response(interaction, %{type: 7})
   end
 
+  def initialize_player_kick(%Interaction{} = interaction, invoker_id, session_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+
+    if is_session_leader?(session, invoker_id) do
+      DiscordAPI.create_interaction_response(interaction, %{
+        type: 4,
+        data: %{
+          # ephemeral: flag 1<<6
+          flags: 1 <<< 6,
+          content: "Choose a player to kick",
+          components: build_kick_player_components(session_id, nil)
+        }
+      })
+    else
+      raise "only the session leader can perform this action"
+    end
+  end
+
+  def select_player_to_kick(interaction, invoker_id, session_id, player_to_kick_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+
+    if is_session_leader?(session, invoker_id) do
+      DiscordAPI.create_interaction_response(interaction, %{
+        type: 7,
+        data: %{
+          components: build_kick_player_components(session_id, player_to_kick_id)
+        }
+      })
+    else
+      raise "only the session leader can perform this action"
+    end
+  end
+
+  def kick_player(%Interaction{} = interaction, invoker_id, session_id, player_to_kick_id)
+      when is_binary(player_to_kick_id) do
+    {:ok, session} = LfgSystem.get(Session, session_id)
+    {:ok, session} = Session.player_kick(session, Snowflake.dump(invoker_id), player_to_kick_id)
+
+    {:ok, _message} =
+      DiscordAPI.edit_message(
+        Snowflake.cast!(session.channel_id),
+        Snowflake.cast!(session.message_id),
+        embeds: build_session_msg_embeds(session)
+      )
+
+    # ACK the interaction, then delete the 'kick player' message
+    {:ok} = DiscordAPI.create_interaction_response(interaction, %{type: 6})
+    DiscordAPI.delete_interaction_response(interaction)
+  end
+
   # ---
 
   defp build_session_buttons(%{id: session_id}) do
@@ -238,7 +288,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
       ActionRow.action_row()
       |> ActionRow.append(
         Button.interaction_button("Shuffle Teams", "LFGBOT_SHUFFLE_TEAMS_" <> session_id,
-          style: Nostrum.Constants.ButtonStyle.primary(),
+          style: Nostrum.Constants.ButtonStyle.secondary(),
           emoji: %{name: "🔒"}
         )
       )
@@ -248,23 +298,31 @@ defmodule LfgBot.Discord.InteractionHandlers do
           emoji: %{name: "🔒"}
         )
       )
+      |> ActionRow.append(
+        Button.interaction_button(
+          "Kick Player",
+          "LFGBOT_KICK_INIT_" <> session_id,
+          style: Nostrum.Constants.ButtonStyle.secondary(),
+          emoji: %{name: "🔒"}
+        )
+      )
 
     user_buttons_row =
       ActionRow.action_row()
       |> ActionRow.append(
         Button.interaction_button("Join Group", "LFGBOT_PLAYER_JOIN_" <> session_id,
-          style: Nostrum.Constants.ButtonStyle.success(),
+          style: Nostrum.Constants.ButtonStyle.primary(),
           emoji: %{name: "🎮"}
         )
       )
       |> ActionRow.append(
         Button.interaction_button("Leave Group", "LFGBOT_PLAYER_LEAVE_" <> session_id,
-          style: Nostrum.Constants.ButtonStyle.secondary(),
+          style: Nostrum.Constants.ButtonStyle.primary(),
           emoji: %{name: "🚶"}
         )
       )
 
-    [leader_buttons_row, user_buttons_row]
+    [user_buttons_row, leader_buttons_row]
   end
 
   defp build_session_msg_embeds(%Session{} = session) do
@@ -299,8 +357,8 @@ defmodule LfgBot.Discord.InteractionHandlers do
   defp build_team_string(team) when is_list(team),
     do:
       Enum.map_join(team, "\n", fn
-        %{"username" => username, "id" => id} -> "- " <> tag_user(id)
-        %{username: username, id: id} -> "- " <> tag_user(id)
+        %{"id" => id} -> "- " <> tag_user(id)
+        %{id: id} -> "- " <> tag_user(id)
       end)
 
   # Dump a Nostrum user struct into a more compact
@@ -315,4 +373,50 @@ defmodule LfgBot.Discord.InteractionHandlers do
   end
 
   defp tag_user(user_id) when is_binary(user_id), do: "<@#{user_id}>"
+
+  defp build_kick_player_components(session_id, player_to_kick_id) do
+    select_menu =
+      ActionRow.action_row(
+        components: [
+          # NOTE: seems that using the select_menu function doesn't actually let you use type 5, it always sends a type 3
+          %Nostrum.Struct.Component{
+            type: 5,
+            custom_id: "LFGBOT_KICK_SELECT_" <> session_id,
+            min_values: 1,
+            max_values: 1,
+            placeholder: "Player to kick"
+          }
+        ]
+      )
+
+    player_to_kick_id =
+      case player_to_kick_id do
+        id when is_binary(id) -> id
+        id when is_integer(id) -> Snowflake.dump(id)
+        _ -> "DISABLED"
+      end
+
+    submit_button =
+      ActionRow.action_row(
+        components: [
+          Button.interaction_button(
+            "Kick",
+            "LFGBOT_KICK_SUBMIT_" <> session_id <> "_" <> player_to_kick_id,
+            style: Nostrum.Constants.ButtonStyle.primary(),
+            disabled: player_to_kick_id == "DISABLED",
+            emoji: %{name: "🥾"}
+          )
+        ]
+      )
+
+    [select_menu, submit_button]
+  end
+
+  defp is_session_leader?(session, invoker_id) when is_integer(invoker_id) do
+    is_session_leader?(session, Snowflake.dump(invoker_id))
+  end
+
+  defp is_session_leader?(session, invoker_id) when is_binary(invoker_id) do
+    session.leader_user_id == invoker_id
+  end
 end
