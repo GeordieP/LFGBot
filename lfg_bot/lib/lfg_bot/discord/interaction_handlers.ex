@@ -378,7 +378,7 @@ defmodule LfgBot.Discord.InteractionHandlers do
     select_menu =
       ActionRow.action_row(
         components: [
-          # NOTE: seems that using the select_menu function doesn't actually let you use type 5
+          # NOTE: seems that using the select_menu function doesn't actually let you use type 5, it always sends a type 3
           %Nostrum.Struct.Component{
             type: 5,
             custom_id: "LFGBOT_KICK_SELECT_" <> session_id,

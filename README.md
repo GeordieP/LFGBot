@@ -32,8 +32,6 @@ The core data layer is using the [Ash](https://github.com/ash-project/ash) frame
 
 The production instance is deployed on [Fly.io](https://fly.io).
 
----
-
 <details>
   <summary>
     Things you'll need in order to contribute
@@ -81,6 +79,8 @@ Unless I've missed something, after all this, you should be able to run the elix
 - [lib/lfg_bot/lfg_system/resources/session.ex](lfg_bot/lib/lfg_bot/lfg_system/resources/session.ex)
   - `Session` database model
   - Represents a group/session and stores the team player lists
+
+---
 
 #### Diagrams
 
