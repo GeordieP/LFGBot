@@ -32,9 +32,11 @@ The core data layer is using the [Ash](https://github.com/ash-project/ash) frame
 
 The production instance is deployed on [Fly.io](https://fly.io).
 
+---
+
 <details>
   <summary>
-    Things you'll need in order to contribute:
+    Things you'll need in order to contribute
   </summary>
 
 - Elixir
@@ -62,6 +64,8 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 </details>
 
+---
+
 #### Repo Points of Interest
 
 - [lib/lfg_bot/discord/consumer.ex](lfg_bot/lib/lfg_bot/discord/consumer.ex)
@@ -77,3 +81,37 @@ Unless I've missed something, after all this, you should be able to run the elix
 - [lib/lfg_bot/lfg_system/resources/session.ex](lfg_bot/lib/lfg_bot/lfg_system/resources/session.ex)
   - `Session` database model
   - Represents a group/session and stores the team player lists
+
+#### Diagrams
+
+[tldraw file](assets/tldraw_pages.tldr)
+
+<details>
+  <summary>
+    Channel registration flow
+  </summary>
+
+![Channel registration flow](assets/channel_registration_flow.svg)
+[Channel registration flow](assets/channel_registration_flow.svg)
+
+</details>
+
+<details>
+  <summary>
+    Group setup flow
+  </summary>
+
+![Group setup flow](assets/group_setup_flow.svg)
+[Group setup flow](assets/group_setup_flow.svg)
+
+</details>
+
+<details>
+  <summary>
+    Player kick flow
+  </summary>
+
+![Player kick flow](assets/player_kick_flow.svg)
+[Player kick flow](assets/player_kick_flow.svg)
+
+</details>
