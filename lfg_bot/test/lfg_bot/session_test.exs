@@ -284,6 +284,99 @@ defmodule LfgBot.SessionTest do
     assert message =~ "perform this action"
   end
 
+  test "allows leader to kick a player" do
+    [user_one, user_two, user_three, user_four] = Enum.take(mock_users(), 4)
+
+    {:ok, session} =
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
+
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
+    {:ok, session} = Session.player_join(session, user_three)
+    {:ok, session} = Session.player_join(session, user_four)
+
+    %{teams: [%{"players" => t1_players}, %{"players" => t2_players}]} = session
+    assert length(t1_players) == 2
+    assert length(t2_players) == 2
+
+    # kick player one
+    {:ok, session} = Session.player_kick(session, "leader_user_id", user_one.id)
+
+    # team 1 should have one fewer players now
+    %{teams: [%{"players" => t1_players}, %{"players" => t2_players}]} = session
+    assert length(t1_players) == 1
+    assert length(t2_players) == 2
+
+    [should_be_user_three] = t1_players
+    assert should_be_user_three.id == user_three.id
+  end
+
+  test "prevents non-leader user from kicking a player" do
+    [user_one, user_two, user_three, user_four] = Enum.take(mock_users(), 4)
+
+    {:ok, session} =
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
+
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
+    {:ok, session} = Session.player_join(session, user_three)
+    {:ok, session} = Session.player_join(session, user_four)
+
+    %{teams: [%{"players" => t1_players}, %{"players" => t2_players}]} = session
+    assert length(t1_players) == 2
+    assert length(t2_players) == 2
+
+    # player four tries to kick another player
+    {:error, %Ash.Error.Invalid{errors: errors}} =
+      Session.player_kick(session, user_four.id, user_one.id)
+
+    %Ash.Error.Changes.InvalidChanges{message: message} = Enum.at(errors, 0)
+    assert message =~ "perform this action"
+  end
+
+  test "no-op when attempting to kick a player that isn't in the game" do
+    [user_one, user_two, user_three, user_four] = Enum.take(mock_users(), 4)
+
+    {:ok, session} =
+      Session.new(%{
+        message_id: "fake_message_id",
+        channel_id: "fake_channel_id",
+        guild_id: "guild_id",
+        leader_user_id: "leader_user_id",
+        leader_user_name: "leader_user_name"
+      })
+
+    {:ok, session} = Session.player_join(session, user_one)
+    {:ok, session} = Session.player_join(session, user_two)
+    {:ok, session} = Session.player_join(session, user_three)
+    {:ok, session} = Session.player_join(session, user_four)
+
+    %{teams: [%{"players" => t1_players}, %{"players" => t2_players}]} = session
+    assert length(t1_players) == 2
+    assert length(t2_players) == 2
+
+    # attempt to kick a non-existent player
+    {:ok, session} =
+      Session.player_kick(session, "leader_user_id", "this is a fake id")
+
+    # teams should be exactly the same
+    %{teams: [%{"players" => new_t1_players}, %{"players" => new_t2_players}]} = session
+    assert new_t1_players == t1_players
+    assert new_t2_players == t2_players
+  end
+
   def mock_users do
     [
       mock_player("user_one"),

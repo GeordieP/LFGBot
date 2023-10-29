@@ -1,6 +1,7 @@
 defmodule LfgBot.Discord.Consumer do
   use Nostrum.Consumer
   require Logger
+
   alias Nostrum.Struct.{ApplicationCommandInteractionData, Interaction}
   alias LfgBot.Discord.{InteractionHandlers, MessageHandlers}
 
@@ -125,15 +126,60 @@ defmodule LfgBot.Discord.Consumer do
          %Interaction{
            user: %{id: invoker_id, username: invoker_username},
            data: %ApplicationCommandInteractionData{
-             custom_id: "LFGBOT_TESTING_TESTING_TESTING_TESTING" <> session_id
+             custom_id: "LFGBOT_KICK_INIT_" <> session_id
            }
          } = interaction, _ws_state}
       ) do
     Logger.debug(
-      "[DISCORD EVENT] [TEST TEST TEST MODAL] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+      "[DISCORD EVENT] [KICK INIT] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
     )
 
-    {:ok} = InteractionHandlers.open_test_modal(interaction, invoker_id, session_id)
+    {:ok} = InteractionHandlers.initialize_player_kick(interaction, invoker_id, session_id)
+  end
+
+  def handle_event(
+        {:INTERACTION_CREATE,
+         %Interaction{
+           user: %{id: invoker_id, username: invoker_username},
+           data:
+             %ApplicationCommandInteractionData{
+               custom_id: "LFGBOT_KICK_SELECT_" <> session_id
+             } = data
+         } = interaction, _ws_state}
+      ) do
+    Logger.debug(
+      "[DISCORD EVENT] [KICK SELECT] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
+    %{resolved: %Nostrum.Struct.ApplicationCommandInteractionDataResolved{users: users}} = data
+    # expect exactly one user
+    [player_to_kick_id] = Map.keys(users)
+
+    {:ok} =
+      InteractionHandlers.select_player_to_kick(
+        interaction,
+        invoker_id,
+        session_id,
+        player_to_kick_id
+      )
+  end
+
+  def handle_event(
+        {:INTERACTION_CREATE,
+         %Interaction{
+           user: %{id: invoker_id, username: invoker_username},
+           data: %ApplicationCommandInteractionData{
+             custom_id: "LFGBOT_KICK_SUBMIT_" <> session_and_user_id
+           }
+         } = interaction, _ws_state}
+      ) do
+    [session_id, user_id] = String.split(session_and_user_id, "_")
+
+    Logger.debug(
+      "[DISCORD EVENT] [KICK SUBMIT] invoker: #{invoker_username} #{invoker_id} | session id: #{session_id}"
+    )
+
+    {:ok} = InteractionHandlers.kick_player(interaction, invoker_id, session_id, user_id)
   end
 
   ## Message Handlers

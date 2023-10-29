@@ -72,6 +72,7 @@ defmodule LfgBot.LfgSystem.Session do
     define(:player_join, action: :player_join, args: [:new_player])
     define(:player_leave, action: :player_leave, args: [:player_id])
 
+    define(:player_kick, action: :player_kick, args: [:invoker_user_id, :player_id])
     define(:start_game, action: :start_game, args: [:invoker_user_id])
     define(:end_game, action: :end_game, args: [:invoker_user_id])
     define(:shuffle_teams, action: :shuffle_teams, args: [:invoker_user_id])
@@ -159,6 +160,28 @@ defmodule LfgBot.LfgSystem.Session do
       change(fn changeset, _ ->
         player_id = Ash.Changeset.get_argument(changeset, :player_id)
         Utils.remove_player(changeset, player_id)
+      end)
+    end
+
+    update :player_kick do
+      argument :invoker_user_id, :string do
+        allow_nil?(false)
+      end
+
+      argument :player_id, :string do
+        allow_nil?(false)
+      end
+
+      change(fn changeset, _ ->
+        invoker_user_id = Ash.Changeset.get_argument(changeset, :invoker_user_id)
+        leader_user_id = Ash.Changeset.get_attribute(changeset, :leader_user_id)
+        player_id_to_kick = Ash.Changeset.get_argument(changeset, :player_id)
+
+        if invoker_user_id == leader_user_id do
+          Utils.remove_player(changeset, player_id_to_kick)
+        else
+          Ash.Changeset.add_error(changeset, "only the session leader can perform this action")
+        end
       end)
     end
 
