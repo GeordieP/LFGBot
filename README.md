@@ -19,6 +19,7 @@ Teams are shown in the bot's message, and can be shuffled by the group leader.
 ![a discord message showing a group with two empty teams, and buttons to leave/join or control the session underneath](assets/group_msg_empty.png)
 
 **Full Teams**
+
 ![a discord message showing a group with 10 players split between two teams, and buttons to leave/join or control the session underneath](assets/group_msg_full.png)
 
 ## Dev & Contributing
