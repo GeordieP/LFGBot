@@ -84,8 +84,6 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 #### Diagrams
 
-[tldraw file](assets/tldraw_pages.tldr)
-
 <details>
   <summary>
     Command installation flow
@@ -130,7 +128,7 @@ USER--)CONSUMER: Run CMD /lfginit
 CONSUMER->>HANDLERS: InteractionHandlers<br/>.register_channel()
 Note over HANDLERS: {guild_id, channel_id}
 HANDLERS->>DATABASE: find existing OR create<br /> RegisteredGuildChannel
-DATABASE-->>HANDLERS:
+DATABASE-->>HANDLERS: #nbsp;
 Note right of HANDLERS: %RegisteredGuildChannel{id: reg_id}
 Note left of DISCORD: User waits while the bot is<br />creating a control message <br />and storing its ID.
 
@@ -145,7 +143,7 @@ Note over CONSUMER: {"LFGREG:" <> reg_id, message_id} = msg
 CONSUMER->>HANDLERS: MessageHandlers<br/>.registration_message()
 Note over HANDLERS: {reg_id, channel_id, message_id}
 HANDLERS->>DATABASE: update RegisteredGuildChannel<br />(store message_id)
-DATABASE-->>HANDLERS:
+DATABASE-->>HANDLERS: #nbsp;
 
 HANDLERS->>DISCORD: Edit registration message (message_id)
 Note over DISCORD: Instructions &<br/>Control Buttons ✅
@@ -178,11 +176,11 @@ CONSUMER->>HANDLERS: InteractionHandlers<br />.start_session()
 HANDLERS->>DISCORD: Send new session msg
 Note over DISCORD: Temp group setup msg
 Note left of DISCORD: We create the group msg with<br/>temp text so we can keep<br/>track of the msg ID in the Session<br/>database and edit it later.
-DISCORD-->>HANDLERS:
+DISCORD-->>HANDLERS: #nbsp;
 Note left of HANDLERS: {msg_id}
 HANDLERS->>DATABASE: create Session
 Note over DATABASE: {guild_id, channel_id,<br />message_id, leader_user_id}
-DATABASE-->>HANDLERS:
+DATABASE-->>HANDLERS: #nbsp;
 Note left of DATABASE: %Session{id: session_id}
 Note left of DISCORD: Once the session is created, we edit<br />the setup msg to show the empty<br/>teams list, and add btns to <br />control the session.
 Note left of DISCORD: Control btn components have the<br />session's ID associated with them<br/> in their custom_id field, so we can<br />pattern match on the session that each<br />event has come from.
@@ -235,7 +233,7 @@ Note over CONSUMER: "LFGBOT_KICK_SUBMIT" <> session_and_user_id
 CONSUMER->>HANDLERS: InteractionHandlers<br/>.kick_player()
 Note over HANDLERS: {session_id, user_id}
 HANDLERS->>DATABASE: Remove player from session
-DATABASE->>HANDLERS:
+DATABASE->>HANDLERS: #nbsp;
 HANDLERS->>DISCORD: edit session msg<br />(show updated teams)
 HANDLERS-->>DISCORD: interaction response: ACK
 HANDLERS->>DISCORD: delete 'kick player' msg
