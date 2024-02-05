@@ -88,11 +88,72 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 <details>
   <summary>
+    Command installation flow
+  </summary>
+
+```mermaid
+sequenceDiagram
+autonumber
+
+actor USER
+participant DISCORD
+participant CONSUMER
+participant HANDLERS
+participant DATABASE
+
+Note right of CONSUMER: ⬇️🚨 ENTRY POINT ⬇️🚨
+CONSUMER->>HANDLERS: {:READY,_,_}
+HANDLERS->>DISCORD: Install commands
+Note over DISCORD: CMD /lfginit installed! ✅
+Note left of DISCORD: The bot is ready to be initialized.
+
+```
+
+</details>
+
+<details>
+  <summary>
     Channel registration flow
   </summary>
 
-![Channel registration flow](assets/channel_registration_flow.svg)
-[Channel registration flow](assets/channel_registration_flow.svg)
+```mermaid
+sequenceDiagram
+autonumber
+
+actor USER
+participant DISCORD
+participant CONSUMER
+participant HANDLERS
+participant DATABASE
+
+USER--)CONSUMER: Run CMD /lfginit
+CONSUMER->>HANDLERS: InteractionHandlers<br/>.register_channel()
+Note over HANDLERS: {guild_id, channel_id}
+HANDLERS->>DATABASE: find existing OR create<br /> RegisteredGuildChannel
+DATABASE-->>HANDLERS:
+Note right of HANDLERS: %RegisteredGuildChannel{id: reg_id}
+Note left of DISCORD: User waits while the bot is<br />creating a control message <br />and storing its ID.
+
+HANDLERS->>DISCORD: Send new registration msg<br/>(interaction response)
+activate DISCORD
+Note left of DISCORD: We need the ID of this registration msg,<br/>but Api.create_interaction_response()<br/>doesn't return us a msg ID.
+Note left of DISCORD: Instead our response sends<br />an ID string:
+Note over DISCORD: id_string = "LFGREG:" <> reg_id
+Note left of DISCORD: then we match <br/>on it in a msg handler,<br/>store that msg ID, and finally, <br/>edit the msg to show instructions.
+DISCORD--)CONSUMER: Recv new registration msg
+Note over CONSUMER: {"LFGREG:" <> reg_id, message_id} = msg
+CONSUMER->>HANDLERS: MessageHandlers<br/>.registration_message()
+Note over HANDLERS: {reg_id, channel_id, message_id}
+HANDLERS->>DATABASE: update RegisteredGuildChannel<br />(store message_id)
+DATABASE-->>HANDLERS:
+
+HANDLERS->>DISCORD: Edit registration message (message_id)
+Note over DISCORD: Instructions &<br/>Control Buttons ✅
+deactivate DISCORD
+Note left of DISCORD: The channel is registered.
+Note left of DISCORD: The user can now<br />start a game session.
+
+```
 
 </details>
 
@@ -101,8 +162,42 @@ Unless I've missed something, after all this, you should be able to run the elix
     Group setup flow
   </summary>
 
-![Group setup flow](assets/group_setup_flow.svg)
-[Group setup flow](assets/group_setup_flow.svg)
+```mermaid
+sequenceDiagram
+autonumber
+
+actor USER
+participant DISCORD
+participant CONSUMER
+participant HANDLERS
+participant DATABASE
+
+USER--)CONSUMER: Click "New Group"
+Note over CONSUMER: "LFGBOT_START_SESSION"
+CONSUMER->>HANDLERS: InteractionHandlers<br />.start_session()
+HANDLERS->>DISCORD: Send new session msg
+Note over DISCORD: Temp group setup msg
+Note left of DISCORD: We create the group msg with<br/>temp text so we can keep<br/>track of the msg ID in the Session<br/>database and edit it later.
+DISCORD-->>HANDLERS:
+Note left of HANDLERS: {msg_id}
+HANDLERS->>DATABASE: create Session
+Note over DATABASE: {guild_id, channel_id,<br />message_id, leader_user_id}
+DATABASE-->>HANDLERS:
+Note left of DATABASE: %Session{id: session_id}
+Note left of DISCORD: Once the session is created, we edit<br />the setup msg to show the empty<br/>teams list, and add btns to <br />control the session.
+Note left of DISCORD: Control btn components have the<br />session's ID associated with them<br/> in their custom_id field, so we can<br />pattern match on the session that each<br />event has come from.
+HANDLERS-->>DISCORD: Edit msg - show teams, add components<br/>(bound to session_id)
+HANDLERS-->>DISCORD: interaction response: ACK
+Note left of DISCORD: ✅ Players can join,<br/>shuffle, end session
+USER--)CONSUMER: Click "end session"
+Note over CONSUMER: "LFGBOT_END_SESSION" <> session_id
+CONSUMER->>HANDLERS: InteractionHandlers<br />.end_session()
+HANDLERS->>DATABASE: change session state to :ended
+HANDLERS->>DISCORD: delete session msg
+HANDLERS->>DISCORD: interaction response: ACK
+Note left of DISCORD: ✅ Session has<br />been cleaned up
+
+```
 
 </details>
 
@@ -111,7 +206,41 @@ Unless I've missed something, after all this, you should be able to run the elix
     Player kick flow
   </summary>
 
-![Player kick flow](assets/player_kick_flow.svg)
-[Player kick flow](assets/player_kick_flow.svg)
+```mermaid
+sequenceDiagram
+autonumber
+
+actor USER
+participant DISCORD
+participant CONSUMER
+participant HANDLERS
+participant DATABASE
+
+USER--)CONSUMER: Click "Kick a player"
+Note over CONSUMER: "LFGBOT_KICK_INIT" <> session_id
+CONSUMER->>HANDLERS: InteractionHandlers<br/>.initialize_player_kick()
+Note over HANDLERS: {session_id}
+HANDLERS-->>DISCORD: interaction response: Create msg
+Note left of DISCORD: [Ephemeral msg]<br />Kick player components:<br/>Player select menu,<br/>kick btn (disabled)
+
+USER--)CONSUMER: Select "player to kick"
+Note over CONSUMER: "LFGBOT_KICK_SELECT" <> session_id
+CONSUMER->>HANDLERS: InteractionHandlers<br/>.select_player_to_kick()
+Note over HANDLERS: {session_id, user_id}
+HANDLERS-->>DISCORD: interaction response:<br/>Update 'kick btn': bind user_id
+Note left of DISCORD: [Ephemeral msg]<br />Kick player components:<br/>Player select menu,<br/>kick btn (ENABLED)
+
+USER--)CONSUMER: Click 'kick'
+Note over CONSUMER: "LFGBOT_KICK_SUBMIT" <> session_and_user_id
+CONSUMER->>HANDLERS: InteractionHandlers<br/>.kick_player()
+Note over HANDLERS: {session_id, user_id}
+HANDLERS->>DATABASE: Remove player from session
+DATABASE->>HANDLERS:
+HANDLERS->>DISCORD: edit session msg<br />(show updated teams)
+HANDLERS-->>DISCORD: interaction response: ACK
+HANDLERS->>DISCORD: delete 'kick player' msg
+Note left of DISCORD: ✅ Player kicked, and<br />temp message deleted
+
+```
 
 </details>
