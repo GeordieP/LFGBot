@@ -84,18 +84,6 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 #### Diagrams
 
-[tldraw file](assets/tldraw_pages.tldr)
-
 - [Channel Registration Sequence](/assets/channel_registration_sequence.md)
-
-<details>
-  <summary>
-    Group setup flow
-  </summary>
-
-![Group setup flow](assets/group_setup_flow.svg)
-[Group setup flow](assets/group_setup_flow.svg)
-
-</details>
-
+- [Group Setup Sequence](/assets/group_setup_sequence.md)
 - [Player Kick Sequence](/assets/player_kick_sequence.md)
