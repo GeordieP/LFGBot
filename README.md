@@ -86,15 +86,7 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 [tldraw file](assets/tldraw_pages.tldr)
 
-<details>
-  <summary>
-    Channel registration flow
-  </summary>
-
-![Channel registration flow](assets/channel_registration_flow.svg)
-[Channel registration flow](assets/channel_registration_flow.svg)
-
-</details>
+- [Channel Registration Sequence](/assets/channel_registration_sequence.md)
 
 <details>
   <summary>
