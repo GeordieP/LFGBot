@@ -40,19 +40,18 @@ defmodule LfgBot.Discord.InteractionHandlers do
   end
 
   def register_channel(%Interaction{} = interaction, guild_id, channel_id) do
-    maybe_register_channel(
-      check_is_channel_registered(guild_id, channel_id),
-      interaction,
-      guild_id,
-      channel_id
-    )
+    check_result = check_is_channel_registered(guild_id, channel_id)
+    maybe_register_channel(check_result, interaction, guild_id, channel_id)
   end
 
   defp check_is_channel_registered(guild_id, channel_id) do
-    case RegisteredGuildChannel.get_by_guild_and_channel(
-           Snowflake.dump(guild_id),
-           Snowflake.dump(channel_id)
-         ) do
+    db_result =
+      RegisteredGuildChannel.get_by_guild_and_channel(
+        Snowflake.dump(guild_id),
+        Snowflake.dump(channel_id)
+      )
+
+    case db_result do
       {:ok, %{id: reg_id, message_id: message_id}} ->
         # guild & channel combination was found in the database! ask discord API if the message can still be accessed
         case DiscordAPI.get_channel_message(channel_id, Snowflake.cast!(message_id)) do
@@ -83,15 +82,19 @@ defmodule LfgBot.Discord.InteractionHandlers do
     })
   end
 
+  # :disconnected means the channel was previously registered, but the message is no longer accessible.
   defp maybe_register_channel({:disconnected, reg_id}, interaction, _, _) do
     send_registration_response(interaction, reg_id)
   end
 
   defp maybe_register_channel({:unregistered}, interaction, guild_id, channel_id) do
-    case RegisteredGuildChannel.new(%{
-           guild_id: Snowflake.dump(guild_id),
-           channel_id: Snowflake.dump(channel_id)
-         }) do
+    db_result =
+      RegisteredGuildChannel.new(%{
+        guild_id: Snowflake.dump(guild_id),
+        channel_id: Snowflake.dump(channel_id)
+      })
+
+    case db_result do
       {:ok, %RegisteredGuildChannel{id: reg_id}} ->
         send_registration_response(interaction, reg_id)
 
