@@ -106,12 +106,4 @@ Unless I've missed something, after all this, you should be able to run the elix
 
 </details>
 
-<details>
-  <summary>
-    Player kick flow
-  </summary>
-
-![Player kick flow](assets/player_kick_flow.svg)
-[Player kick flow](assets/player_kick_flow.svg)
-
-</details>
+- [Player Kick Sequence](/assets/player_kick_sequence.md)
