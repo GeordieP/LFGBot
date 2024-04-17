@@ -1,5 +1,7 @@
 # Group Setup Sequence
 
+[🔙 Back to index README](../README.md#diagrams)
+
 > [!NOTE]
 > This diagram illustrates how we create and run a game session.
 > 
@@ -39,3 +41,5 @@ HANDLERS->>DISCORD: delete session msg
 HANDLERS->>DISCORD: interaction response: ACK
 Note left of DISCORD: ✅ Session has<br />been cleaned up
 ```
+
+[🔙 Back to index README](../README.md#diagrams)

@@ -1,5 +1,7 @@
 # Player Kick Sequence
 
+[🔙 Back to index README](../README.md#diagrams)
+
 > [!NOTE] 
 > This diagram illustrates how we can use Discord message components to kick a player from a group. 
 > 
@@ -38,3 +40,5 @@ HANDLERS-->>DISCORD: interaction response: ACK
 HANDLERS->>DISCORD: delete 'kick player' msg
 Note left of DISCORD: ✅ Player kicked, and<br />temp message deleted
 ```
+
+[🔙 Back to index README](../README.md#diagrams)

@@ -1,5 +1,8 @@
 # Channel Registration Sequence
 
+[🔙 Back to index README](../README.md#diagrams)
+
+
 > [!NOTE]
 > This diagram illustrates how we register a Discord channel with the bot.
 > 
@@ -45,3 +48,5 @@ deactivate DISCORD
 Note left of DISCORD: The channel is registered.
 Note left of DISCORD: The user can now<br />start a game session.
 ```
+
+[🔙 Back to index README](../README.md#diagrams)
