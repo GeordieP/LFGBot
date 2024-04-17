@@ -40,19 +40,18 @@ defmodule LfgBot.Discord.InteractionHandlers do
   end
 
   def register_channel(%Interaction{} = interaction, guild_id, channel_id) do
-    maybe_register_channel(
-      check_is_channel_registered(guild_id, channel_id),
-      interaction,
-      guild_id,
-      channel_id
-    )
+    check_result = check_is_channel_registered(guild_id, channel_id)
+    maybe_register_channel(check_result, interaction, guild_id, channel_id)
   end
 
   defp check_is_channel_registered(guild_id, channel_id) do
-    case RegisteredGuildChannel.get_by_guild_and_channel(
-           Snowflake.dump(guild_id),
-           Snowflake.dump(channel_id)
-         ) do
+    db_result =
+      RegisteredGuildChannel.get_by_guild_and_channel(
+        Snowflake.dump(guild_id),
+        Snowflake.dump(channel_id)
+      )
+
+    case db_result do
       {:ok, %{id: reg_id, message_id: message_id}} ->
         # guild & channel combination was found in the database! ask discord API if the message can still be accessed
         case DiscordAPI.get_channel_message(channel_id, Snowflake.cast!(message_id)) do
@@ -83,15 +82,19 @@ defmodule LfgBot.Discord.InteractionHandlers do
     })
   end
 
+  # :disconnected means the channel was previously registered, but the message is no longer accessible.
   defp maybe_register_channel({:disconnected, reg_id}, interaction, _, _) do
     send_registration_response(interaction, reg_id)
   end
 
   defp maybe_register_channel({:unregistered}, interaction, guild_id, channel_id) do
-    case RegisteredGuildChannel.new(%{
-           guild_id: Snowflake.dump(guild_id),
-           channel_id: Snowflake.dump(channel_id)
-         }) do
+    db_result =
+      RegisteredGuildChannel.new(%{
+        guild_id: Snowflake.dump(guild_id),
+        channel_id: Snowflake.dump(channel_id)
+      })
+
+    case db_result do
       {:ok, %RegisteredGuildChannel{id: reg_id}} ->
         send_registration_response(interaction, reg_id)
 
@@ -234,39 +237,77 @@ defmodule LfgBot.Discord.InteractionHandlers do
   def initialize_player_kick(%Interaction{} = interaction, invoker_id, session_id) do
     {:ok, session} = LfgSystem.get(Session, session_id)
 
-    if is_session_leader?(session, invoker_id) do
+    unless is_session_leader?(session, invoker_id) do
+      msg = "only the session leader can perform this action"
+
       DiscordAPI.create_interaction_response(interaction, %{
         type: 4,
         data: %{
           # ephemeral: flag 1<<6
           flags: 1 <<< 6,
-          content: "Choose a player to kick",
-          components: build_kick_player_components(session_id, nil)
+          content: msg
         }
       })
-    else
-      raise "only the session leader can perform this action"
+
+      raise msg
     end
+
+    DiscordAPI.create_interaction_response(interaction, %{
+      type: 4,
+      data: %{
+        # ephemeral: flag 1<<6
+        flags: 1 <<< 6,
+        content: "Choose a player to kick",
+        components: build_kick_player_components(session_id, nil)
+      }
+    })
   end
 
   def select_player_to_kick(interaction, invoker_id, session_id, player_to_kick_id) do
     {:ok, session} = LfgSystem.get(Session, session_id)
 
-    if is_session_leader?(session, invoker_id) do
+    unless is_session_leader?(session, invoker_id) do
+      msg = "only the session leader can perform this action"
+
       DiscordAPI.create_interaction_response(interaction, %{
-        type: 7,
+        type: 4,
         data: %{
-          components: build_kick_player_components(session_id, player_to_kick_id)
+          # ephemeral: flag 1<<6
+          flags: 1 <<< 6,
+          content: msg
         }
       })
-    else
-      raise "only the session leader can perform this action"
+
+      raise msg
     end
+
+    DiscordAPI.create_interaction_response(interaction, %{
+      type: 7,
+      data: %{
+        components: build_kick_player_components(session_id, player_to_kick_id)
+      }
+    })
   end
 
   def kick_player(%Interaction{} = interaction, invoker_id, session_id, player_to_kick_id)
       when is_binary(player_to_kick_id) do
     {:ok, session} = LfgSystem.get(Session, session_id)
+
+    unless is_session_leader?(session, invoker_id) do
+      msg = "only the session leader can perform this action"
+
+      DiscordAPI.create_interaction_response(interaction, %{
+        type: 4,
+        data: %{
+          # ephemeral: flag 1<<6
+          flags: 1 <<< 6,
+          content: msg
+        }
+      })
+
+      raise msg
+    end
+
     {:ok, session} = Session.player_kick(session, Snowflake.dump(invoker_id), player_to_kick_id)
 
     {:ok, _message} =
