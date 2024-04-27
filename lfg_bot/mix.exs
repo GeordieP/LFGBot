@@ -55,8 +55,7 @@ defmodule LfgBot.MixProject do
       {:ash_postgres, "~> 1.3"},
       {:ash_phoenix, "~> 1.2"},
       {:ash_state_machine, "~> 0.2.2"},
-      # {:nostrum, "~> 0.8.0", runtime: Mix.env() != :test} # switching to use nostrum master because of issue https://github.com/Kraigie/nostrum/issues/523
-      {:nostrum, git: "https://github.com/Kraigie/nostrum", runtime: Mix.env() != :test}
+      {:nostrum, "~> 0.9.0", runtime: Mix.env() != :test}
     ]
   end
 
