@@ -15,30 +15,6 @@ defmodule LfgBot.Discord.InteractionHandlers do
   # data: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-data-structure
   # data.flags: https://discord.com/developers/docs/resources/channel#message-object-message-flags
 
-  def install_server_commands(guilds, bot_user_id) do
-    # store bot user ID in ETS for later reference
-    true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
-
-    command = %{
-      name: Consumer.command_name(),
-      description: "Initialize LFG Bot in the current channel"
-    }
-
-    # on startup, delete all existing commands we've previously created, and re-register them.
-    # this ensures no duplicates are registered, and any command name changes are propagated to servers.
-    Enum.each(guilds, fn %{id: guild_id} ->
-      {:ok, commands} = DiscordAPI.get_guild_application_commands(guild_id)
-
-      Enum.each(commands, fn %{id: command_id} ->
-        DiscordAPI.delete_guild_application_command(guild_id, command_id)
-      end)
-
-      DiscordAPI.create_guild_application_command(guild_id, command)
-    end)
-
-    {:ok}
-  end
-
   def register_channel(%Interaction{} = interaction, guild_id, channel_id) do
     check_result = check_is_channel_registered(guild_id, channel_id)
     maybe_register_channel(check_result, interaction, guild_id, channel_id)

@@ -3,37 +3,38 @@ defmodule LfgBot.Discord.Consumer do
   require Logger
 
   alias Nostrum.Struct.{ApplicationCommandInteractionData, Interaction}
-  alias LfgBot.Discord.{InteractionHandlers, MessageHandlers}
+  alias LfgBot.Discord.{InteractionHandlers, CommandHandlers, MessageHandlers}
 
   # bot permissions = send messages, create public threads, manage threads, read message history, add reactions, use slash commands
   # @bot_invite_url "https://discord.com/api/oauth2/authorize?client_id=1160972219061645312&permissions=53687158848&scope=bot"
-
-  # @command_name defined as a module attribute so it can be matched on
-  @command_name "lfginit"
-  def command_name, do: @command_name
 
   ## Interaction Handlers
   ## ----------------
 
   def handle_event({:READY, %{guilds: guilds, user: %{id: bot_user_id, bot: true}}, _ws_state}) do
-    Logger.debug("[DISCORD EVENT] [READY] installing server commands...")
-    {:ok} = InteractionHandlers.install_server_commands(guilds, bot_user_id)
-  end
+    # store bot user ID in ETS for later reference. Our code should be able to find out our ID at any time.
+    true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
 
-  def handle_event(
-        {:INTERACTION_CREATE,
-         %Interaction{
-           channel_id: channel_id,
-           guild_id: guild_id,
-           user: %{id: invoker_user_id, username: invoker_user_name},
-           data: %ApplicationCommandInteractionData{name: @command_name}
-         } = interaction, _}
-      ) do
-    Logger.debug(
-      "[DISCORD EVENT] [REGISTER CHANNEL] invoker: #{invoker_user_name} #{invoker_user_id} | guild id: #{guild_id}"
-    )
+    Logger.debug("[DISCORD EVENT] [READY] installing commands...")
 
-    {:ok} = InteractionHandlers.register_channel(interaction, guild_id, channel_id)
+    # DANGER: TEMP -------------------------------------------------------------
+    # SECTION: reset all commands migration:
+    #       we're migrating from guild commands to global commands, since we can
+    #       easily bulk update those.
+    #       after a deployed version deletes all commands, enable the code to install global commands.
+
+    {:ok} = CommandHandlers.delete_all_global_commands()
+
+    for %{id: guild_id} <- guilds do
+      {:ok} = CommandHandlers.delete_all_guild_commands(guild_id)
+    end
+
+    # END: reset all commands migration
+    # DANGER: TEMP -------------------------------------------------------------
+
+    # NOTE: enable the lines below after the migration.
+    # {:ok} = CommandHandlers.install_global_commands()
+    # {:not_implemented} = CommandHandlers.install_guild_commands(guilds)
   end
 
   def handle_event(
@@ -180,6 +181,23 @@ defmodule LfgBot.Discord.Consumer do
     )
 
     {:ok} = InteractionHandlers.kick_player(interaction, invoker_id, session_id, user_id)
+  end
+
+  ## Command Handlers
+  ## ----------------
+
+  def handle_event(
+        {:INTERACTION_CREATE,
+         %Interaction{
+           data: %ApplicationCommandInteractionData{}
+         } = interaction, _}
+      ) do
+    # INFO: we forward all commands to the command handler module,
+    #       rather than explicitly handling them here in the consumer like everything else.
+    #       The reason for this is that the CommandHandlers module has module attributes for
+    #       each of our command names, so they can be pattern matched on.
+    #       To use them here in the consumer, we'd have to duplicate that code into this module.
+    CommandHandlers.handle_command(interaction)
   end
 
   ## Message Handlers
