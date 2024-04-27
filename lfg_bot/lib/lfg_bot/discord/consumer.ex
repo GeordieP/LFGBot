@@ -16,8 +16,25 @@ defmodule LfgBot.Discord.Consumer do
     true = :ets.insert(:lfg_bot_table, {"bot_user_id", bot_user_id})
 
     Logger.debug("[DISCORD EVENT] [READY] installing commands...")
-    {:ok} = CommandHandlers.install_global_commands()
-    {:not_implemented} = CommandHandlers.install_guild_commands(guilds)
+
+    # DANGER: TEMP -------------------------------------------------------------
+    # SECTION: reset all commands migration:
+    #       we're migrating from guild commands to global commands, since we can
+    #       easily bulk update those.
+    #       after a deployed version deletes all commands, enable the code to install global commands.
+
+    {:ok} = CommandHandlers.delete_all_global_commands()
+
+    for %{id: guild_id} <- guilds do
+      {:ok} = CommandHandlers.delete_all_guild_commands(guild_id)
+    end
+
+    # END: reset all commands migration
+    # DANGER: TEMP -------------------------------------------------------------
+
+    # NOTE: enable the lines below after the migration.
+    # {:ok} = CommandHandlers.install_global_commands()
+    # {:not_implemented} = CommandHandlers.install_guild_commands(guilds)
   end
 
   def handle_event(
