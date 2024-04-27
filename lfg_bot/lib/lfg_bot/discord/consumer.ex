@@ -214,11 +214,6 @@ defmodule LfgBot.Discord.Consumer do
       ) do
     [{"bot_user_id", bot_user_id}] = :ets.lookup(:lfg_bot_table, "bot_user_id")
 
-    # TODO: remove dbg
-    # TODO: remove dbg
-    # TODO: remove dbg
-    dbg(bot_user_id)
-
     if author_id == bot_user_id do
       {:ok} = MessageHandlers.registration_message(reg_id, channel_id, message_id)
     end
